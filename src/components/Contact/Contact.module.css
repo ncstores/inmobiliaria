@@ -1,0 +1,329 @@
+.contactSection {
+  background-color: var(--bg-white);
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sectionTitle {
+  font-size: 32px;
+  font-weight: 800;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  color: var(--text-dark);
+}
+
+.sectionSubtitle {
+  color: var(--text-muted);
+  max-width: 650px;
+  font-size: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 50px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* Success Banner styling */
+.successBanner {
+  background-color: #E8F5E9; /* Light Green */
+  border: 1px solid #C8E6C9;
+  border-left: 5px solid #2E7D32;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.successIcon {
+  color: #2E7D32;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.successContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.successTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1B5E20;
+  margin: 0;
+}
+
+.successText {
+  font-size: 13px;
+  color: #2E7D32;
+  margin: 0;
+}
+
+/* Form controls styling */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 576px) {
+  .formRow {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-light);
+  outline: none;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--primary-red);
+  background-color: var(--bg-white);
+  box-shadow: 0 0 0 3px var(--primary-red-light);
+}
+
+.inputError {
+  border-color: #D32F2F !important;
+  background-color: #FFEBEE;
+}
+
+.errorMessage {
+  font-size: 11px;
+  font-weight: 600;
+  color: #D32F2F;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.submitBtn {
+  align-self: flex-start;
+  padding: 14px 28px;
+  font-size: 15px;
+}
+
+@media (max-width: 576px) {
+  .submitBtn {
+    width: 100%;
+  }
+}
+
+/* Info Column styling */
+.infoColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.infoCard {
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 30px;
+}
+
+.infoCardTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  position: relative;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.infoCardTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background-color: var(--primary-red);
+}
+
+.infoItemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.infoItem {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.infoIcon {
+  color: var(--primary-red);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.infoLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 2px 0;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+/* Map Mock visual */
+.mapMock {
+  position: relative;
+  height: 280px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.mapMockBg {
+  flex-grow: 1;
+  position: relative;
+  background-color: #E3F2FD; /* Map ocean color */
+  /* Drawing basic abstract streets using linear gradients */
+  background-image: 
+    linear-gradient(90deg, transparent 45%, #FFFFFF 45%, #FFFFFF 55%, transparent 55%),
+    linear-gradient(0deg, transparent 40%, #FFFFFF 40%, #FFFFFF 50%, transparent 50%),
+    linear-gradient(45deg, transparent 48%, #ECEFF1 48%, #ECEFF1 52%, transparent 52%);
+  background-size: 120px 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapPin {
+  z-index: 2;
+  position: relative;
+  color: var(--primary-red);
+  transform: translateY(-8px);
+}
+
+.mapPinPulse {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(211, 47, 47, 0.25);
+  border-radius: 50%;
+  animation: pulse 1.8s infinite ease-out;
+  transform: scale(0);
+}
+
+.mapIcon {
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.mapLabelCard {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background-color: var(--bg-white);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  max-width: 220px;
+  z-index: 3;
+}
+
+.mapLabelTitle {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--primary-red);
+  margin: 0 0 2px 0;
+}
+
+.mapLabelAddr {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mapLinkBtn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: var(--bg-white);
+  color: var(--text-dark);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  z-index: 3;
+}
+
+.mapLinkBtn:hover {
+  background-color: var(--primary-red);
+  color: var(--bg-white);
+  border-color: var(--primary-red);
+}

@@ -440,6 +440,13 @@
   gap: 10px;
 }
 
+.migrationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0 12px;
+}
+
 @media (max-width: 768px) {
   .contentFieldsGrid {
     grid-template-columns: 1fr;

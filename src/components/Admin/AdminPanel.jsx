@@ -102,6 +102,10 @@ const contentSections = [
 const ADMIN_AUTH_KEY = 'vergnano_admin_auth';
 const ADMIN_RESET_KEY = 'vergnano_admin_reset';
 const LEGACY_ADMIN_PASSWORD = 'admin123';
+const LOCAL_PROPERTIES_KEY = 'vergnano_properties';
+const LOCAL_LOCATIONS_KEY = 'vergnano_locations';
+const LOCAL_TYPES_KEY = 'vergnano_types';
+const LOCAL_CONTENT_KEY = 'vergnano_site_content';
 
 const bytesToHex = (bytes) => Array.from(bytes).map((byte) => byte.toString(16).padStart(2, '0')).join('');
 
@@ -214,6 +218,8 @@ export default function AdminPanel({ onBackToSite }) {
   const [typeError, setTypeError] = useState('');
   const [contentForm, setContentForm] = useState(defaultSiteContent);
   const [contentSaved, setContentSaved] = useState(false);
+  const [migrationMessage, setMigrationMessage] = useState('');
+  const [migrationError, setMigrationError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -572,6 +578,82 @@ export default function AdminPanel({ onBackToSite }) {
     setSecurityMessage('Contraseña actualizada correctamente.');
   };
 
+  const readLocalJson = (key, fallback) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      console.error(`Error reading ${key} from localStorage`, e);
+      return fallback;
+    }
+  };
+
+  const getLocalBackup = () => ({
+    properties: readLocalJson(LOCAL_PROPERTIES_KEY, []),
+    locations: readLocalJson(LOCAL_LOCATIONS_KEY, []),
+    types: readLocalJson(LOCAL_TYPES_KEY, []),
+    siteContent: readLocalJson(LOCAL_CONTENT_KEY, defaultSiteContent),
+    adminAuth: readLocalJson(ADMIN_AUTH_KEY, null),
+    exportedAt: new Date().toISOString()
+  });
+
+  const handleExportLocalData = () => {
+    const backup = getLocalBackup();
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `backup-inmobiliaria-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleMigrateLocalData = async () => {
+    setMigrationMessage('');
+    setMigrationError('');
+
+    if (!hasSupabaseConfig) {
+      setMigrationError('Supabase todavía no está configurado en Vercel/local. Cargá VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY y redeployá.');
+      return;
+    }
+
+    const backup = getLocalBackup();
+    const hasData = backup.properties.length > 0 || backup.locations.length > 0 || backup.types.length > 0 || backup.siteContent;
+
+    if (!hasData) {
+      setMigrationError('No encontré datos locales en este navegador. Abrí el admin desde el navegador donde cargaste la información.');
+      return;
+    }
+
+    if (!window.confirm('Esto va a subir los datos locales de este navegador a Supabase y reemplazar los datos online actuales. ¿Continuar?')) {
+      return;
+    }
+
+    try {
+      await saveProperties(backup.properties);
+      await saveLocations(backup.locations);
+      await saveTypes(backup.types);
+      await saveSiteContent({ ...defaultSiteContent, ...backup.siteContent });
+
+      if (backup.adminAuth) {
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert({ key: ADMIN_AUTH_KEY, value: backup.adminAuth, updated_at: new Date().toISOString() });
+
+        if (error) throw error;
+      }
+
+      setProperties(backup.properties);
+      setLocations(backup.locations);
+      setTypes(backup.types);
+      setContentForm({ ...defaultSiteContent, ...backup.siteContent });
+      setMigrationMessage('Datos locales migrados a Supabase correctamente. Ya quedan disponibles online.');
+    } catch (error) {
+      console.error('Error migrating local data to Supabase', error);
+      setMigrationError('No se pudo migrar a Supabase. Revisá que las tablas estén creadas y las variables de Vercel estén configuradas.');
+    }
+  };
+
   const handleLocationSubmit = async (e) => {
     e.preventDefault();
     const nextName = locationName.trim();
@@ -859,7 +941,45 @@ export default function AdminPanel({ onBackToSite }) {
           >
             Seguridad
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('migration')}
+            className={`${styles.adminTabBtn} ${activeTab === 'migration' ? styles.adminTabActive : ''}`}
+          >
+            Migración
+          </button>
         </div>
+
+        {activeTab === 'migration' && (
+        <section className={styles.tableSection}>
+          <div className={styles.tableHeaderArea}>
+            <div>
+              <h2 className={styles.tableAreaTitle}>Migración de Datos</h2>
+              <p className={styles.sectionHint}>Usá esta pestaña desde el navegador donde cargaste los datos locales.</p>
+            </div>
+          </div>
+
+          <div className={styles.contentSectionGroup}>
+            <h3 className={styles.contentGroupTitle}>Subir datos locales a la nube</h3>
+            <p className={styles.sectionHint}>
+              Este proceso lee propiedades, fotos, barrios, tipologías, textos, logo y contraseña guardados en este navegador y los sube a Supabase.
+            </p>
+            <div className={styles.migrationActions}>
+              <button type="button" onClick={handleExportLocalData} className="btn btn-outline" style={{ padding: '10px 20px' }}>
+                Exportar Backup Local
+              </button>
+              <button type="button" onClick={handleMigrateLocalData} className="btn btn-primary" style={{ padding: '10px 20px' }}>
+                Migrar a Supabase
+              </button>
+            </div>
+            {!hasSupabaseConfig && (
+              <span className={styles.formErrorText}>Supabase no está configurado todavía. Cargá las variables en Vercel y hacé redeploy.</span>
+            )}
+            {migrationError && <span className={styles.formErrorText}>{migrationError}</span>}
+            {migrationMessage && <span className={styles.savedPill}>{migrationMessage}</span>}
+          </div>
+        </section>
+        )}
 
         {activeTab === 'security' && (
         <section className={styles.tableSection}>

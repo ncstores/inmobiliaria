@@ -1,3 +1,5 @@
+import { hasSupabaseConfig, supabase } from './supabaseClient';
+
 export const defaultSiteContent = {
   brandName: 'VERGNANO',
   brandSubtitle: 'Administraciones',
@@ -64,7 +66,24 @@ export const defaultSiteContent = {
 
 const STORAGE_KEY = 'vergnano_site_content';
 
-export function getStoredSiteContent() {
+export async function getStoredSiteContent() {
+  if (hasSupabaseConfig) {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', STORAGE_KEY)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error reading site content from Supabase, using local fallback', error);
+    } else if (data) {
+      return { ...defaultSiteContent, ...data.value };
+    } else {
+      await saveSiteContent(defaultSiteContent);
+      return defaultSiteContent;
+    }
+  }
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -79,7 +98,17 @@ export function getStoredSiteContent() {
   }
 }
 
-export function saveSiteContent(content) {
+export async function saveSiteContent(content) {
+  if (hasSupabaseConfig) {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({ key: STORAGE_KEY, value: content, updated_at: new Date().toISOString() });
+
+    if (!error) return true;
+
+    console.error('Error writing site content to Supabase, using local fallback', error);
+  }
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
     return true;

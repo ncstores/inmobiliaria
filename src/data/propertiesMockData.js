@@ -1,3 +1,5 @@
+import { hasSupabaseConfig, supabase } from './supabaseClient';
+
 export const propertiesData = [
   {
     id: 1,
@@ -131,23 +133,23 @@ const STORAGE_KEY = 'vergnano_properties';
 const LOCATIONS_STORAGE_KEY = 'vergnano_locations';
 const TYPES_STORAGE_KEY = 'vergnano_types';
 
-export function getStoredProperties() {
+function getLocalData(key, fallback) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(propertiesData));
-      return propertiesData;
+      localStorage.setItem(key, JSON.stringify(fallback));
+      return fallback;
     }
     return JSON.parse(raw);
   } catch (e) {
     console.error("Error reading localStorage, returning defaults", e);
-    return propertiesData;
+    return fallback;
   }
 }
 
-export function saveProperties(properties) {
+function saveLocalData(key, value) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
+    localStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch (e) {
     console.error("Error writing to localStorage", e);
@@ -155,50 +157,132 @@ export function saveProperties(properties) {
   }
 }
 
-export function getStoredLocations() {
-  try {
-    const raw = localStorage.getItem(LOCATIONS_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(LOCATIONS_STORAGE_KEY, JSON.stringify(defaultLocations));
-      return defaultLocations;
-    }
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Error reading locations from localStorage, returning defaults", e);
-    return defaultLocations;
+async function getSettingsValue(key, fallback) {
+  if (!hasSupabaseConfig) return getLocalData(key, fallback);
+
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`Error reading ${key} from Supabase`, error);
+    return getLocalData(key, fallback);
   }
+
+  if (!data) {
+    await saveSettingsValue(key, fallback);
+    return fallback;
+  }
+
+  return data.value;
 }
 
-export function saveLocations(locations) {
-  try {
-    localStorage.setItem(LOCATIONS_STORAGE_KEY, JSON.stringify(locations));
-    return true;
-  } catch (e) {
-    console.error("Error writing locations to localStorage", e);
-    return false;
+async function saveSettingsValue(key, value) {
+  if (!hasSupabaseConfig) return saveLocalData(key, value);
+
+  const { error } = await supabase
+    .from('app_settings')
+    .upsert({ key, value, updated_at: new Date().toISOString() });
+
+  if (error) {
+    console.error(`Error writing ${key} to Supabase`, error);
+    return saveLocalData(key, value);
   }
+
+  return true;
 }
 
-export function getStoredTypes() {
-  try {
-    const raw = localStorage.getItem(TYPES_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(TYPES_STORAGE_KEY, JSON.stringify(defaultTypes));
-      return defaultTypes;
-    }
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Error reading types from localStorage, returning defaults", e);
-    return defaultTypes;
+export async function getStoredProperties() {
+  if (!hasSupabaseConfig) return getLocalData(STORAGE_KEY, propertiesData);
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error("Error reading properties from Supabase", error);
+    return getLocalData(STORAGE_KEY, propertiesData);
   }
+
+  if (!data || data.length === 0) {
+    await saveProperties(propertiesData);
+    return propertiesData;
+  }
+
+  return data.map((property) => ({
+    id: property.id,
+    title: property.title,
+    type: property.type,
+    price: property.price,
+    expenses: property.expenses,
+    location: property.location,
+    address: property.address,
+    mapUrl: property.map_url || '',
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surface: property.surface,
+    operation: property.operation,
+    description: property.description,
+    amenities: property.amenities || [],
+    images: property.images || []
+  }));
 }
 
-export function saveTypes(types) {
-  try {
-    localStorage.setItem(TYPES_STORAGE_KEY, JSON.stringify(types));
-    return true;
-  } catch (e) {
-    console.error("Error writing types to localStorage", e);
-    return false;
+export async function saveProperties(properties) {
+  if (!hasSupabaseConfig) return saveLocalData(STORAGE_KEY, properties);
+
+  const rows = properties.map((property, index) => ({
+    id: property.id,
+    title: property.title,
+    type: property.type,
+    price: property.price,
+    expenses: property.expenses,
+    location: property.location,
+    address: property.address,
+    map_url: property.mapUrl || '',
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    surface: property.surface,
+    operation: property.operation,
+    description: property.description,
+    amenities: property.amenities || [],
+    images: property.images || [],
+    sort_order: index,
+    updated_at: new Date().toISOString()
+  }));
+
+  const { error: deleteError } = await supabase.from('properties').delete().neq('id', -1);
+  if (deleteError) {
+    console.error("Error clearing Supabase properties", deleteError);
+    return saveLocalData(STORAGE_KEY, properties);
   }
+
+  if (rows.length === 0) return true;
+
+  const { error } = await supabase.from('properties').insert(rows);
+  if (error) {
+    console.error("Error writing properties to Supabase", error);
+    return saveLocalData(STORAGE_KEY, properties);
+  }
+
+  return true;
+}
+
+export async function getStoredLocations() {
+  return getSettingsValue(LOCATIONS_STORAGE_KEY, defaultLocations);
+}
+
+export async function saveLocations(locations) {
+  return saveSettingsValue(LOCATIONS_STORAGE_KEY, locations);
+}
+
+export async function getStoredTypes() {
+  return getSettingsValue(TYPES_STORAGE_KEY, defaultTypes);
+}
+
+export async function saveTypes(types) {
+  return saveSettingsValue(TYPES_STORAGE_KEY, types);
 }

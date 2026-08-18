@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit3, LogOut, Building, TrendingUp, Coins, Lock, X, ExternalLink } from 'lucide-react';
 import { getStoredLocations, getStoredProperties, getStoredTypes, saveLocations, saveProperties, saveTypes } from '../../data/propertiesMockData';
 import { defaultSiteContent, getStoredSiteContent, saveSiteContent } from '../../data/siteContent';
+import { hasSupabaseConfig, supabase } from '../../data/supabaseClient';
 import styles from './AdminPanel.module.css';
 
 const contentSections = [
@@ -116,7 +117,19 @@ const hashPassword = async (password, salt) => {
   return bytesToHex(new Uint8Array(digest));
 };
 
-const getStoredAuth = () => {
+const getStoredAuth = async () => {
+  if (hasSupabaseConfig) {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', ADMIN_AUTH_KEY)
+      .maybeSingle();
+
+    if (!error && data) return data.value;
+
+    if (error) console.error('Error reading admin auth from Supabase', error);
+  }
+
   try {
     const raw = localStorage.getItem(ADMIN_AUTH_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -129,11 +142,23 @@ const getStoredAuth = () => {
 const saveAdminPassword = async (newPassword) => {
   const salt = createSalt();
   const passwordHash = await hashPassword(newPassword, salt);
-  localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify({ salt, passwordHash, updatedAt: Date.now() }));
+  const authData = { salt, passwordHash, updatedAt: Date.now() };
+
+  if (hasSupabaseConfig) {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({ key: ADMIN_AUTH_KEY, value: authData, updated_at: new Date().toISOString() });
+
+    if (!error) return;
+
+    console.error('Error writing admin auth to Supabase', error);
+  }
+
+  localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(authData));
 };
 
 const verifyAdminPassword = async (password) => {
-  const auth = getStoredAuth();
+  const auth = await getStoredAuth();
 
   if (!auth) {
     if (password === LEGACY_ADMIN_PASSWORD) {
@@ -191,11 +216,29 @@ export default function AdminPanel({ onBackToSite }) {
   const [contentSaved, setContentSaved] = useState(false);
 
   useEffect(() => {
-    // Load properties from storage
-    setProperties(getStoredProperties());
-    setLocations(getStoredLocations());
-    setTypes(getStoredTypes());
-    setContentForm(getStoredSiteContent());
+    let isMounted = true;
+
+    async function loadAdminData() {
+      const [storedProperties, storedLocations, storedTypes, storedContent] = await Promise.all([
+        getStoredProperties(),
+        getStoredLocations(),
+        getStoredTypes(),
+        getStoredSiteContent()
+      ]);
+
+      if (!isMounted) return;
+
+      setProperties(storedProperties);
+      setLocations(storedLocations);
+      setTypes(storedTypes);
+      setContentForm(storedContent);
+    }
+
+    loadAdminData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const defaultLocation = locations[0] || 'Nueva Córdoba';
@@ -272,11 +315,11 @@ export default function AdminPanel({ onBackToSite }) {
     setPassword('');
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('¿Está seguro de que desea eliminar esta propiedad? Esta acción no se puede deshacer.')) {
       const updated = properties.filter(p => p.id !== id);
       setProperties(updated);
-      saveProperties(updated);
+      await saveProperties(updated);
     }
   };
 
@@ -344,7 +387,7 @@ export default function AdminPanel({ onBackToSite }) {
     return Object.keys(err).length === 0;
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -386,7 +429,7 @@ export default function AdminPanel({ onBackToSite }) {
     }
 
     setProperties(updatedList);
-    saveProperties(updatedList);
+    await saveProperties(updatedList);
     setIsModalOpen(false);
   };
 
@@ -486,9 +529,9 @@ export default function AdminPanel({ onBackToSite }) {
     setContentSaved(false);
   };
 
-  const handleContentSubmit = (e) => {
+  const handleContentSubmit = async (e) => {
     e.preventDefault();
-    saveSiteContent(contentForm);
+    await saveSiteContent(contentForm);
     setContentSaved(true);
     setTimeout(() => setContentSaved(false), 2500);
   };
@@ -529,7 +572,7 @@ export default function AdminPanel({ onBackToSite }) {
     setSecurityMessage('Contraseña actualizada correctamente.');
   };
 
-  const handleLocationSubmit = (e) => {
+  const handleLocationSubmit = async (e) => {
     e.preventDefault();
     const nextName = locationName.trim();
 
@@ -552,12 +595,12 @@ export default function AdminPanel({ onBackToSite }) {
 
       setLocations(nextLocations);
       setProperties(nextProperties);
-      saveLocations(nextLocations);
-      saveProperties(nextProperties);
+      await saveLocations(nextLocations);
+      await saveProperties(nextProperties);
     } else {
       const nextLocations = [...locations, nextName];
       setLocations(nextLocations);
-      saveLocations(nextLocations);
+      await saveLocations(nextLocations);
     }
 
     setLocationName('');
@@ -577,7 +620,7 @@ export default function AdminPanel({ onBackToSite }) {
     setLocationError('');
   };
 
-  const handleDeleteLocation = (location) => {
+  const handleDeleteLocation = async (location) => {
     const hasProperties = properties.some((property) => property.location === location);
     if (hasProperties) {
       window.alert('No se puede eliminar un barrio que tiene propiedades cargadas. Primero cambie esas propiedades a otro barrio.');
@@ -587,11 +630,11 @@ export default function AdminPanel({ onBackToSite }) {
     if (window.confirm(`¿Eliminar el barrio "${location}"?`)) {
       const nextLocations = locations.filter((loc) => loc !== location);
       setLocations(nextLocations);
-      saveLocations(nextLocations);
+      await saveLocations(nextLocations);
     }
   };
 
-  const handleTypeSubmit = (e) => {
+  const handleTypeSubmit = async (e) => {
     e.preventDefault();
     const nextName = typeName.trim();
 
@@ -614,12 +657,12 @@ export default function AdminPanel({ onBackToSite }) {
 
       setTypes(nextTypes);
       setProperties(nextProperties);
-      saveTypes(nextTypes);
-      saveProperties(nextProperties);
+      await saveTypes(nextTypes);
+      await saveProperties(nextProperties);
     } else {
       const nextTypes = [...types, nextName];
       setTypes(nextTypes);
-      saveTypes(nextTypes);
+      await saveTypes(nextTypes);
     }
 
     setTypeName('');
@@ -639,7 +682,7 @@ export default function AdminPanel({ onBackToSite }) {
     setTypeError('');
   };
 
-  const handleDeleteType = (type) => {
+  const handleDeleteType = async (type) => {
     const hasProperties = properties.some((property) => property.type === type);
     if (hasProperties) {
       window.alert('No se puede eliminar una tipología que tiene propiedades cargadas. Primero cambie esas propiedades a otra tipología.');
@@ -649,7 +692,7 @@ export default function AdminPanel({ onBackToSite }) {
     if (window.confirm(`¿Eliminar la tipología "${type}"?`)) {
       const nextTypes = types.filter((item) => item !== type);
       setTypes(nextTypes);
-      saveTypes(nextTypes);
+      await saveTypes(nextTypes);
     }
   };
 

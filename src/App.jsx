@@ -8,14 +8,14 @@ import Contact from './components/Contact/Contact';
 import Footer from './components/Footer/Footer';
 import AdminPanel from './components/Admin/AdminPanel';
 import { getStoredLocations, getStoredProperties, getStoredTypes } from './data/propertiesMockData';
-import { getStoredSiteContent } from './data/siteContent';
+import { defaultSiteContent, getStoredSiteContent } from './data/siteContent';
 
 export default function App() {
   const [view, setView] = useState('public'); // 'public' | 'admin'
   const [allProperties, setAllProperties] = useState([]);
   const [locations, setLocations] = useState([]);
   const [types, setTypes] = useState([]);
-  const [siteContent, setSiteContent] = useState(getStoredSiteContent());
+  const [siteContent, setSiteContent] = useState(defaultSiteContent);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [filters, setFilters] = useState({
     location: 'Todos',
@@ -45,10 +45,29 @@ export default function App() {
 
   // Fetch properties from localStorage when view resets to public or admin updates
   useEffect(() => {
-    setAllProperties(getStoredProperties());
-    setLocations(getStoredLocations());
-    setTypes(getStoredTypes());
-    setSiteContent(getStoredSiteContent());
+    let isMounted = true;
+
+    async function loadData() {
+      const [storedProperties, storedLocations, storedTypes, storedContent] = await Promise.all([
+        getStoredProperties(),
+        getStoredLocations(),
+        getStoredTypes(),
+        getStoredSiteContent()
+      ]);
+
+      if (!isMounted) return;
+
+      setAllProperties(storedProperties);
+      setLocations(storedLocations);
+      setTypes(storedTypes);
+      setSiteContent(storedContent);
+    }
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [view]);
 
   // Core filtering logic

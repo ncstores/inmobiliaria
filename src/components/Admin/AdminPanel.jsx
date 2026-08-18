@@ -907,6 +907,9 @@ export default function AdminPanel({ onBackToSite }) {
         </div>
         
         <div className={styles.navRight}>
+          <span className={`${styles.storageStatus} ${hasSupabaseConfig ? styles.storageOnline : styles.storageLocal}`}>
+            {hasSupabaseConfig ? 'Guardado online activo' : 'Guardado local'}
+          </span>
           <button onClick={onBackToSite} className={`btn btn-outline ${styles.viewSiteBtn}`}>
             <ExternalLink size={16} />
             Ver Web Pública

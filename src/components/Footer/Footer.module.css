@@ -113,6 +113,10 @@
   transform: translateY(-2px);
 }
 
+.whatsappLink:hover {
+  background-color: #25D366;
+}
+
 /* Links Column styling */
 .linksCol {
   display: flex;
@@ -237,6 +241,22 @@
 
 .copyright {
   font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.creatorCredit {
+  color: #64748B;
+}
+
+.creatorCredit a {
+  color: var(--accent-yellow);
+  font-weight: 700;
+}
+
+.creatorCredit a:hover {
+  color: var(--accent-yellow-hover);
 }
 
 .scrollTopBtn {

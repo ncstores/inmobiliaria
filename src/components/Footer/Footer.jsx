@@ -4,7 +4,7 @@ import styles from './Footer.module.css';
 
 export default function Footer({ content }) {
   const hasValue = (value) => Boolean(value && value.trim());
-  const hasSocials = hasValue(content.facebookUrl) || hasValue(content.instagramUrl) || hasValue(content.linkedinUrl);
+  const hasSocials = hasValue(content.facebookUrl) || hasValue(content.instagramUrl) || hasValue(content.linkedinUrl) || hasValue(content.whatsappNumber);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -78,6 +78,13 @@ export default function Footer({ content }) {
                   </svg>
                 </a>
               )}
+              {hasValue(content.whatsappNumber) && (
+                <a href={`https://wa.me/${content.whatsappNumber}`} target="_blank" rel="noreferrer" className={`${styles.socialLink} ${styles.whatsappLink}`} aria-label="WhatsApp">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.95L2.05 22l5.27-1.38a9.9 9.9 0 0 0 4.72 1.2h.01c5.46 0 9.91-4.45 9.91-9.91S17.51 2 12.04 2Zm0 18.14h-.01a8.2 8.2 0 0 1-4.18-1.14l-.3-.18-3.13.82.84-3.05-.2-.31a8.17 8.17 0 0 1-1.25-4.36c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.25 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.4-.12-.57.12-.17.25-.65.8-.8.97-.15.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.15-.25-.02-.38.11-.51.11-.11.25-.3.37-.45.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.57-1.38-.78-1.89-.2-.49-.41-.42-.57-.43h-.49c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.09 0 1.23.9 2.42 1.02 2.59.12.17 1.76 2.69 4.27 3.77.6.26 1.06.41 1.43.53.6.19 1.14.16 1.57.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.16-.48-.29Z" />
+                  </svg>
+                </a>
+              )}
             </div>
           )}
         </div>
@@ -99,6 +106,9 @@ export default function Footer({ content }) {
         <div className={`${styles.bottomContainer} container`}>
           <span className={styles.copyright}>
             &copy; {new Date().getFullYear()} {content.brandName} {content.brandSubtitle}. Todos los derechos reservados.
+            <span className={styles.creatorCredit}>
+              Sitio creado por <a href="https://www.ncstores.com.ar" target="_blank" rel="noreferrer">www.ncstores.com.ar</a>
+            </span>
           </span>
           <button onClick={scrollToTop} className={styles.scrollTopBtn} aria-label="Volver arriba">
             <ArrowUp size={16} />

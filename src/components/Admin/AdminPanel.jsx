@@ -608,6 +608,64 @@ export default function AdminPanel({ onBackToSite }) {
     URL.revokeObjectURL(url);
   };
 
+  const applyBackup = async (backup) => {
+    const nextProperties = backup.properties || [];
+    const nextLocations = backup.locations || [];
+    const nextTypes = backup.types || [];
+    const nextContent = { ...defaultSiteContent, ...(backup.siteContent || {}) };
+
+    localStorage.setItem(LOCAL_PROPERTIES_KEY, JSON.stringify(nextProperties));
+    localStorage.setItem(LOCAL_LOCATIONS_KEY, JSON.stringify(nextLocations));
+    localStorage.setItem(LOCAL_TYPES_KEY, JSON.stringify(nextTypes));
+    localStorage.setItem(LOCAL_CONTENT_KEY, JSON.stringify(nextContent));
+
+    if (backup.adminAuth) {
+      localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(backup.adminAuth));
+    }
+
+    setProperties(nextProperties);
+    setLocations(nextLocations);
+    setTypes(nextTypes);
+    setContentForm(nextContent);
+
+    if (hasSupabaseConfig) {
+      await saveProperties(nextProperties);
+      await saveLocations(nextLocations);
+      await saveTypes(nextTypes);
+      await saveSiteContent(nextContent);
+
+      if (backup.adminAuth) {
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert({ key: ADMIN_AUTH_KEY, value: backup.adminAuth, updated_at: new Date().toISOString() });
+
+        if (error) throw error;
+      }
+    }
+  };
+
+  const handleImportBackup = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setMigrationMessage('');
+    setMigrationError('');
+
+    try {
+      const backup = JSON.parse(await file.text());
+      await applyBackup(backup);
+      setMigrationMessage(hasSupabaseConfig
+        ? 'Backup importado y subido a Supabase correctamente.'
+        : 'Backup importado en este navegador. Configurá Supabase para subirlo a la nube.'
+      );
+    } catch (error) {
+      console.error('Error importing backup', error);
+      setMigrationError('No se pudo importar el backup. Verificá que sea un archivo JSON válido exportado desde este sistema.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   const handleMigrateLocalData = async () => {
     setMigrationMessage('');
     setMigrationError('');
@@ -630,23 +688,7 @@ export default function AdminPanel({ onBackToSite }) {
     }
 
     try {
-      await saveProperties(backup.properties);
-      await saveLocations(backup.locations);
-      await saveTypes(backup.types);
-      await saveSiteContent({ ...defaultSiteContent, ...backup.siteContent });
-
-      if (backup.adminAuth) {
-        const { error } = await supabase
-          .from('app_settings')
-          .upsert({ key: ADMIN_AUTH_KEY, value: backup.adminAuth, updated_at: new Date().toISOString() });
-
-        if (error) throw error;
-      }
-
-      setProperties(backup.properties);
-      setLocations(backup.locations);
-      setTypes(backup.types);
-      setContentForm({ ...defaultSiteContent, ...backup.siteContent });
+      await applyBackup(backup);
       setMigrationMessage('Datos locales migrados a Supabase correctamente. Ya quedan disponibles online.');
     } catch (error) {
       console.error('Error migrating local data to Supabase', error);
@@ -968,6 +1010,15 @@ export default function AdminPanel({ onBackToSite }) {
               <button type="button" onClick={handleExportLocalData} className="btn btn-outline" style={{ padding: '10px 20px' }}>
                 Exportar Backup Local
               </button>
+              <label className={`btn btn-outline ${styles.importBackupBtn}`}>
+                Importar Backup JSON
+                <input
+                  type="file"
+                  accept="application/json"
+                  onChange={handleImportBackup}
+                  style={{ display: 'none' }}
+                />
+              </label>
               <button type="button" onClick={handleMigrateLocalData} className="btn btn-primary" style={{ padding: '10px 20px' }}>
                 Migrar a Supabase
               </button>

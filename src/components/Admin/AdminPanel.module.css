@@ -447,6 +447,10 @@
   margin: 18px 0 12px;
 }
 
+.importBackupBtn {
+  padding: 10px 20px;
+}
+
 @media (max-width: 768px) {
   .contentFieldsGrid {
     grid-template-columns: 1fr;

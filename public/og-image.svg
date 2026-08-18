@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <rect x="0" y="0" width="1200" height="18" fill="#d32f2f"/>
+  <rect x="82" y="98" width="1036" height="434" rx="34" fill="#fff8db" stroke="#d32f2f" stroke-width="10"/>
+  <path d="M600 155v250" stroke="#d32f2f" stroke-width="22" stroke-linecap="round"/>
+  <path d="M535 405c35-20 46-50 41-89-34 21-48 51-41 89Z" fill="#d32f2f"/>
+  <path d="M665 405c-35-20-46-50-41-89 34 21 48 51 41 89Z" fill="#d32f2f"/>
+  <path d="M505 455h190" stroke="#d32f2f" stroke-width="14" stroke-linecap="round"/>
+  <path d="M475 478h250" stroke="#d32f2f" stroke-width="10" stroke-linecap="round"/>
+  <text x="600" y="560" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="800" fill="#0f172a">Administración Vergnano</text>
+</svg>

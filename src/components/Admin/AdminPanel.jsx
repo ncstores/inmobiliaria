@@ -84,7 +84,7 @@ const contentSections = [
       ['contactHoursLabel', 'Rótulo horarios'],
       ['contactHours', 'Horarios'],
       ['whatsappNumber', 'Número WhatsApp sin + ni espacios'],
-      ['googleMapsUrl', 'URL embed de Google Maps', 'textarea']
+      ['googleMapsUrl', 'URL de Google Maps', 'textarea']
     ]
   },
   {
@@ -1176,7 +1176,7 @@ export default function AdminPanel({ onBackToSite }) {
                     className={styles.modalInput}
                   />
                   <small style={{ color: 'var(--text-light)', fontSize: '11px', marginTop: '2px' }}>
-                    Acepta enlaces largos de Google Maps. Si queda vacío, el mapa se genera con la dirección física y el barrio.
+                    Acepta enlaces normales o largos de Google Maps. Si queda vacío, el mapa se genera con la dirección física y el barrio.
                   </small>
                 </div>
 

@@ -20,7 +20,8 @@ function getGoogleMapsEmbedUrl(mapUrl, address) {
     return `https://maps.google.com/maps?q=${coordinates[1]},${coordinates[2]}&z=16&output=embed`;
   }
 
-  const query = trimmedUrl.includes('maps.app.goo.gl') ? fallbackQuery : encodeURIComponent(trimmedUrl);
+  const isGoogleMapsUrl = trimmedUrl.includes('google.com/maps') || trimmedUrl.includes('maps.app.goo.gl');
+  const query = isGoogleMapsUrl ? fallbackQuery : encodeURIComponent(trimmedUrl);
   return `https://maps.google.com/maps?q=${query}&z=16&output=embed`;
 }
 

@@ -8,14 +8,15 @@ import Contact from './components/Contact/Contact';
 import Footer from './components/Footer/Footer';
 import AdminPanel from './components/Admin/AdminPanel';
 import { getStoredLocations, getStoredProperties, getStoredTypes } from './data/propertiesMockData';
-import { defaultSiteContent, getStoredSiteContent } from './data/siteContent';
+import { getStoredSiteContent } from './data/siteContent';
 
 export default function App() {
   const [view, setView] = useState('public'); // 'public' | 'admin'
   const [allProperties, setAllProperties] = useState([]);
   const [locations, setLocations] = useState([]);
   const [types, setTypes] = useState([]);
-  const [siteContent, setSiteContent] = useState(defaultSiteContent);
+  const [siteContent, setSiteContent] = useState(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [filters, setFilters] = useState({
     location: 'Todos',
@@ -61,8 +62,10 @@ export default function App() {
       setLocations(storedLocations);
       setTypes(storedTypes);
       setSiteContent(storedContent);
+      setIsLoadingData(false);
     }
 
+    setIsLoadingData(true);
     loadData();
 
     return () => {
@@ -130,6 +133,12 @@ export default function App() {
 
   if (view === 'admin') {
     return <AdminPanel onBackToSite={handleBackToSite} />;
+  }
+
+  if (isLoadingData || !siteContent) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-light)' }} aria-label="Cargando sitio" />
+    );
   }
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit3, LogOut, Building, TrendingUp, Coins, Lock, X, ExternalLink } from 'lucide-react';
 import { getStoredLocations, getStoredProperties, getStoredTypes, saveLocations, saveProperties, saveTypes } from '../../data/propertiesMockData';
 import { defaultSiteContent, getStoredSiteContent, saveSiteContent } from '../../data/siteContent';
@@ -218,9 +218,19 @@ export default function AdminPanel({ onBackToSite }) {
   const [editingType, setEditingType] = useState(null);
   const [typeError, setTypeError] = useState('');
   const [contentForm, setContentForm] = useState(defaultSiteContent);
-  const [contentSaved, setContentSaved] = useState(false);
   const [migrationMessage, setMigrationMessage] = useState('');
   const [migrationError, setMigrationError] = useState('');
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (message, type = 'success') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -245,6 +255,9 @@ export default function AdminPanel({ onBackToSite }) {
 
     return () => {
       isMounted = false;
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -327,7 +340,8 @@ export default function AdminPanel({ onBackToSite }) {
     if (window.confirm('¿Está seguro de que desea eliminar esta propiedad? Esta acción no se puede deshacer.')) {
       const updated = properties.filter(p => p.id !== id);
       setProperties(updated);
-      await saveProperties(updated);
+      const saved = await saveProperties(updated);
+      showToast(saved ? 'Propiedad eliminada correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
     }
   };
 
@@ -439,8 +453,9 @@ export default function AdminPanel({ onBackToSite }) {
     }
 
     setProperties(updatedList);
-    await saveProperties(updatedList);
+    const saved = await saveProperties(updatedList);
     setIsModalOpen(false);
+    showToast(saved ? 'Propiedad guardada correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
   };
 
   const handleInputChange = (e) => {
@@ -519,7 +534,6 @@ export default function AdminPanel({ onBackToSite }) {
     try {
       const logoImage = await resizeImageFile(file);
       setContentForm((current) => ({ ...current, logoImage }));
-      setContentSaved(false);
     } catch (error) {
       console.error('Error loading logo file', error);
       window.alert('No se pudo cargar el logo. Verifique que sea un archivo de imagen válido.');
@@ -530,20 +544,17 @@ export default function AdminPanel({ onBackToSite }) {
 
   const clearLogo = () => {
     setContentForm((current) => ({ ...current, logoImage: '' }));
-    setContentSaved(false);
   };
 
   const handleContentChange = (e) => {
     const { name, value } = e.target;
     setContentForm((current) => ({ ...current, [name]: value }));
-    setContentSaved(false);
   };
 
   const handleContentSubmit = async (e) => {
     e.preventDefault();
-    await saveSiteContent(contentForm);
-    setContentSaved(true);
-    setTimeout(() => setContentSaved(false), 2500);
+    const saved = await saveSiteContent(contentForm);
+    showToast(saved ? 'Contenido guardado correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
   };
 
   const handleSecurityChange = (e) => {
@@ -580,6 +591,7 @@ export default function AdminPanel({ onBackToSite }) {
     setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '', recoveryCode: '' });
     setSecurityError('');
     setSecurityMessage('Contraseña actualizada correctamente.');
+    showToast('Contraseña actualizada correctamente.');
   };
 
   const readLocalJson = (key, fallback) => {
@@ -662,9 +674,11 @@ export default function AdminPanel({ onBackToSite }) {
         ? 'Backup importado y subido a Supabase correctamente.'
         : 'Backup importado en este navegador. Configurá Supabase para subirlo a la nube.'
       );
+      showToast(hasSupabaseConfig ? 'Backup importado y guardado correctamente.' : 'Backup importado localmente.');
     } catch (error) {
       console.error('Error importing backup', error);
       setMigrationError('No se pudo importar el backup. Verificá que sea un archivo JSON válido exportado desde este sistema.');
+      showToast('No se pudo importar el backup.', 'error');
     } finally {
       e.target.value = '';
     }
@@ -676,6 +690,7 @@ export default function AdminPanel({ onBackToSite }) {
 
     if (!hasSupabaseConfig) {
       setMigrationError('Supabase todavía no está configurado en Vercel/local. Cargá VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY y redeployá.');
+      showToast('Supabase todavía no está configurado.', 'error');
       return;
     }
 
@@ -684,6 +699,7 @@ export default function AdminPanel({ onBackToSite }) {
 
     if (!hasData) {
       setMigrationError('No encontré datos locales en este navegador. Abrí el admin desde el navegador donde cargaste la información.');
+      showToast('No encontré datos locales para migrar.', 'error');
       return;
     }
 
@@ -694,9 +710,11 @@ export default function AdminPanel({ onBackToSite }) {
     try {
       await applyBackup(backup);
       setMigrationMessage('Datos locales migrados a Supabase correctamente. Ya quedan disponibles online.');
+      showToast('Datos migrados a Supabase correctamente.');
     } catch (error) {
       console.error('Error migrating local data to Supabase', error);
       setMigrationError('No se pudo migrar a Supabase. Revisá que las tablas estén creadas y las variables de Vercel estén configuradas.');
+      showToast('No se pudo migrar a Supabase.', 'error');
     }
   };
 
@@ -723,12 +741,14 @@ export default function AdminPanel({ onBackToSite }) {
 
       setLocations(nextLocations);
       setProperties(nextProperties);
-      await saveLocations(nextLocations);
-      await saveProperties(nextProperties);
+      const savedLocations = await saveLocations(nextLocations);
+      const savedProperties = await saveProperties(nextProperties);
+      showToast(savedLocations && savedProperties ? 'Barrio guardado correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', savedLocations && savedProperties ? 'success' : 'error');
     } else {
       const nextLocations = [...locations, nextName];
       setLocations(nextLocations);
-      await saveLocations(nextLocations);
+      const saved = await saveLocations(nextLocations);
+      showToast(saved ? 'Barrio guardado correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
     }
 
     setLocationName('');
@@ -758,7 +778,8 @@ export default function AdminPanel({ onBackToSite }) {
     if (window.confirm(`¿Eliminar el barrio "${location}"?`)) {
       const nextLocations = locations.filter((loc) => loc !== location);
       setLocations(nextLocations);
-      await saveLocations(nextLocations);
+      const saved = await saveLocations(nextLocations);
+      showToast(saved ? 'Barrio eliminado correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
     }
   };
 
@@ -785,12 +806,14 @@ export default function AdminPanel({ onBackToSite }) {
 
       setTypes(nextTypes);
       setProperties(nextProperties);
-      await saveTypes(nextTypes);
-      await saveProperties(nextProperties);
+      const savedTypes = await saveTypes(nextTypes);
+      const savedProperties = await saveProperties(nextProperties);
+      showToast(savedTypes && savedProperties ? 'Tipología guardada correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', savedTypes && savedProperties ? 'success' : 'error');
     } else {
       const nextTypes = [...types, nextName];
       setTypes(nextTypes);
-      await saveTypes(nextTypes);
+      const saved = await saveTypes(nextTypes);
+      showToast(saved ? 'Tipología guardada correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
     }
 
     setTypeName('');
@@ -820,7 +843,8 @@ export default function AdminPanel({ onBackToSite }) {
     if (window.confirm(`¿Eliminar la tipología "${type}"?`)) {
       const nextTypes = types.filter((item) => item !== type);
       setTypes(nextTypes);
-      await saveTypes(nextTypes);
+      const saved = await saveTypes(nextTypes);
+      showToast(saved ? 'Tipología eliminada correctamente.' : 'No se pudo guardar online. Revisá Supabase o la conexión.', saved ? 'success' : 'error');
     }
   };
 
@@ -897,6 +921,11 @@ export default function AdminPanel({ onBackToSite }) {
 
   return (
     <div className={styles.adminContainer}>
+      {toast && (
+        <div className={`${styles.toast} ${toast.type === 'error' ? styles.toastError : styles.toastSuccess}`} role="status">
+          {toast.message}
+        </div>
+      )}
       
       {/* Admin Navbar */}
       <header className={styles.adminNav}>
@@ -1114,7 +1143,6 @@ export default function AdminPanel({ onBackToSite }) {
               <h2 className={styles.tableAreaTitle}>Contenido de la Web</h2>
               <p className={styles.sectionHint}>Modifica textos, datos de contacto, WhatsApp, redes y mapa de Google.</p>
             </div>
-            {contentSaved && <span className={styles.savedPill}>Guardado</span>}
           </div>
 
           <form onSubmit={handleContentSubmit} className={styles.contentForm}>

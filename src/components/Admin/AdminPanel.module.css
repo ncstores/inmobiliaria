@@ -153,6 +153,39 @@
   flex-direction: column;
 }
 
+.toast {
+  position: fixed;
+  top: 92px;
+  right: 28px;
+  z-index: 4000;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  color: var(--bg-white);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 14px 18px;
+  animation: toastIn 0.22s ease;
+}
+
+.toastSuccess {
+  background-color: #2E7D32;
+}
+
+.toastError {
+  background-color: #C62828;
+}
+
+@media (max-width: 768px) {
+  .toast {
+    top: 82px;
+    left: 16px;
+    right: 16px;
+    max-width: none;
+  }
+}
+
 .adminNav {
   background-color: var(--bg-white);
   border-bottom: 2px solid var(--primary-red);
@@ -870,4 +903,15 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

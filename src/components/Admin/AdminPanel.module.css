@@ -554,6 +554,29 @@
   font-family: var(--font-heading);
 }
 
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 5px 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statusAvailable {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.statusRented {
+  background-color: #FFEBEE;
+  color: #C62828;
+}
+
 .tableExpenses {
   font-size: 13px;
   color: var(--text-muted);

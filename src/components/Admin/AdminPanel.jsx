@@ -205,6 +205,7 @@ export default function AdminPanel({ onBackToSite }) {
     bedrooms: '0',
     bathrooms: '1',
     surface: '',
+    operation: 'Alquiler',
     description: '',
     amenitiesStr: '',
     images: []
@@ -251,12 +252,13 @@ export default function AdminPanel({ onBackToSite }) {
   const defaultType = types[0] || 'Monoambiente';
 
   // Quick stats calculation
-  const totalProperties = properties.length;
+  const availableProperties = properties.filter((property) => property.operation !== 'Alquilado');
+  const totalProperties = availableProperties.length;
   const avgPrice = totalProperties > 0 
-    ? Math.round(properties.reduce((acc, curr) => acc + curr.price, 0) / totalProperties) 
+    ? Math.round(availableProperties.reduce((acc, curr) => acc + curr.price, 0) / totalProperties) 
     : 0;
   const maxPrice = totalProperties > 0 
-    ? Math.max(...properties.map(p => p.price)) 
+    ? Math.max(...availableProperties.map(p => p.price)) 
     : 0;
 
   const handleLoginSubmit = async (e) => {
@@ -343,6 +345,7 @@ export default function AdminPanel({ onBackToSite }) {
       bedrooms: '0',
       bathrooms: '1',
       surface: '',
+      operation: 'Alquiler',
       description: '',
       amenitiesStr: '',
       images: [
@@ -369,6 +372,7 @@ export default function AdminPanel({ onBackToSite }) {
       bedrooms: property.bedrooms.toString(),
       bathrooms: property.bathrooms.toString(),
       surface: property.surface.toString(),
+      operation: property.operation === 'Alquilado' ? 'Alquilado' : 'Alquiler',
       description: property.description,
       amenitiesStr: property.amenities ? property.amenities.join(', ') : '',
       images: property.images || []
@@ -421,7 +425,7 @@ export default function AdminPanel({ onBackToSite }) {
       bedrooms: parseInt(formData.bedrooms),
       bathrooms: parseFloat(formData.bathrooms),
       surface: parseInt(formData.surface),
-      operation: 'Alquiler',
+      operation: formData.operation,
       description: formData.description.trim(),
       amenities: amenitiesList,
       images: imagesArray
@@ -1303,6 +1307,7 @@ export default function AdminPanel({ onBackToSite }) {
                   <th>Propiedad / Dirección</th>
                   <th>Barrio</th>
                   <th>Alquiler</th>
+                  <th>Estado</th>
                   <th>Expensas</th>
                   <th>Medidas</th>
                   <th style={{ textAlign: 'center' }}>Acciones</th>
@@ -1322,6 +1327,11 @@ export default function AdminPanel({ onBackToSite }) {
                     </td>
                     <td><span className={styles.tableLocation}>{p.location}</span></td>
                     <td><strong className={styles.tablePrice}>{formatCurrency(p.price)}</strong></td>
+                    <td>
+                      <span className={`${styles.statusBadge} ${p.operation === 'Alquilado' ? styles.statusRented : styles.statusAvailable}`}>
+                        {p.operation === 'Alquilado' ? 'Alquilado' : 'Disponible'}
+                      </span>
+                    </td>
                     <td><span className={styles.tableExpenses}>{formatCurrency(p.expenses)}</span></td>
                     <td>
                       <span className={styles.tableSpecs}>
@@ -1342,7 +1352,7 @@ export default function AdminPanel({ onBackToSite }) {
                 ))}
                 {properties.length === 0 && (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       No hay departamentos en la base de datos local. Hace clic en "Cargar Propiedad" para dar de alta uno nuevo.
                     </td>
                   </tr>
@@ -1395,6 +1405,19 @@ export default function AdminPanel({ onBackToSite }) {
                   <small style={{ color: 'var(--text-light)', fontSize: '11px', marginTop: '2px' }}>
                     Acepta enlaces normales o largos de Google Maps. Si queda vacío, el mapa se genera con la dirección física y el barrio.
                   </small>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Estado de la Propiedad *</label>
+                  <select
+                    name="operation"
+                    value={formData.operation}
+                    onChange={handleInputChange}
+                    className={styles.modalSelect}
+                  >
+                    <option value="Alquiler">Disponible</option>
+                    <option value="Alquilado">Alquilado</option>
+                  </select>
                 </div>
 
                 <div className={styles.formRow}>

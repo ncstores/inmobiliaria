@@ -4,6 +4,7 @@ import styles from './Properties.module.css';
 
 export default function PropertyCard({ property, onSelect }) {
   const { title, price, expenses, location, address, bedrooms, bathrooms, surface, operation, images } = property;
+  const isRented = operation === 'Alquilado';
 
   // Format currency
   const formatCurrency = (value) => {
@@ -16,11 +17,12 @@ export default function PropertyCard({ property, onSelect }) {
   };
 
   return (
-    <div className={styles.card} onClick={() => onSelect(property)}>
+    <div className={`${styles.card} ${isRented ? styles.rentedCard : ''}`} onClick={() => onSelect(property)}>
       <div className={styles.imageContainer}>
         <img src={images[0]} alt={title} className={styles.image} />
-        <span className={styles.operationBadge}>{operation}</span>
+        <span className={`${styles.operationBadge} ${isRented ? styles.rentedBadge : ''}`}>{operation}</span>
         <span className={styles.typeBadge}>{property.type}</span>
+        {isRented && <span className={styles.rentedOverlay}>Alquilado</span>}
       </div>
       
       <div className={styles.cardContent}>

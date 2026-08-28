@@ -25,6 +25,25 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+}
+
+.rentedCard {
+  opacity: 0.9;
+}
+
+.rentedCard::after {
+  content: '';
+  position: absolute;
+  left: -18%;
+  top: 50%;
+  width: 136%;
+  height: 5px;
+  background-color: rgba(211, 47, 47, 0.85);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.25);
+  transform: rotate(-18deg);
+  pointer-events: none;
+  z-index: 4;
 }
 
 .card:hover {
@@ -51,6 +70,10 @@
   transform: scale(1.05);
 }
 
+.rentedCard .image {
+  filter: grayscale(0.5) brightness(0.72);
+}
+
 .operationBadge {
   position: absolute;
   top: 15px;
@@ -64,6 +87,29 @@
   text-transform: uppercase;
   border-radius: var(--radius-sm);
   letter-spacing: 0.5px;
+}
+
+.rentedBadge {
+  background-color: #C62828;
+}
+
+.rentedOverlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  border: 3px solid var(--bg-white);
+  background-color: rgba(198, 40, 40, 0.92);
+  color: var(--bg-white);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  text-transform: uppercase;
+  z-index: 3;
 }
 
 .typeBadge {

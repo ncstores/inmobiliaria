@@ -4,6 +4,7 @@ export const defaultSiteContent = {
   brandName: 'VERGNANO',
   brandSubtitle: 'Administraciones',
   logoImage: '',
+  heroBackgroundImage: '',
   headerCtaText: 'Llamar Ahora',
   heroBadge: 'CONFIANZA Y TRAYECTORIA',
   heroTitle: 'Administración Profesional de Consorcios y Alquileres',

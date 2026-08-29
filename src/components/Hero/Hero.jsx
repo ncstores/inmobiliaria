@@ -32,7 +32,10 @@ export default function Hero({ onSearch, locations, types, content }) {
 
   return (
     <section id="inicio" className={styles.heroSection}>
-      <div className={styles.heroBg}></div>
+      <div
+        className={styles.heroBg}
+        style={content.heroBackgroundImage ? { backgroundImage: `url(${content.heroBackgroundImage})` } : undefined}
+      ></div>
       <div className={styles.heroOverlay}></div>
       
       <div className={`${styles.contentContainer} container`}>

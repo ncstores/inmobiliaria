@@ -546,6 +546,25 @@ export default function AdminPanel({ onBackToSite }) {
     setContentForm((current) => ({ ...current, logoImage: '' }));
   };
 
+  const handleHeroBackgroundFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const heroBackgroundImage = await resizeImageFile(file);
+      setContentForm((current) => ({ ...current, heroBackgroundImage }));
+    } catch (error) {
+      console.error('Error loading hero background file', error);
+      window.alert('No se pudo cargar la imagen de fondo. Verifique que sea un archivo de imagen válido.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const clearHeroBackground = () => {
+    setContentForm((current) => ({ ...current, heroBackgroundImage: '' }));
+  };
+
   const handleContentChange = (e) => {
     const { name, value } = e.target;
     setContentForm((current) => ({ ...current, [name]: value }));
@@ -1169,6 +1188,35 @@ export default function AdminPanel({ onBackToSite }) {
                   {contentForm.logoImage && (
                     <button type="button" onClick={clearLogo} className={styles.deleteBtn} style={{ width: 'fit-content' }}>
                       Quitar Logo
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.contentSectionGroup}>
+              <h3 className={styles.contentGroupTitle}>Imagen de Fondo de Portada</h3>
+              <div className={styles.heroImageUploadRow}>
+                <div className={styles.heroImagePreviewBox}>
+                  {contentForm.heroBackgroundImage ? (
+                    <img src={contentForm.heroBackgroundImage} alt="Fondo de portada" className={styles.heroImagePreviewImg} />
+                  ) : (
+                    <span>Sin imagen cargada</span>
+                  )}
+                </div>
+                <div className={styles.logoUploadControls}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleHeroBackgroundFileChange}
+                    className={styles.fileInput}
+                  />
+                  <small style={{ color: 'var(--text-light)', fontSize: '11px' }}>
+                    Se mostrará detrás del título principal y el buscador. Recomendado: imagen horizontal y amplia.
+                  </small>
+                  {contentForm.heroBackgroundImage && (
+                    <button type="button" onClick={clearHeroBackground} className={styles.deleteBtn} style={{ width: 'fit-content' }}>
+                      Quitar Imagen de Fondo
                     </button>
                   )}
                 </div>

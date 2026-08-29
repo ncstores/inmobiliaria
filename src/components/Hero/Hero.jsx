@@ -8,6 +8,7 @@ export default function Hero({ onSearch, locations, types, content }) {
   const [selectedLocation, setSelectedLocation] = useState('Todos');
   const [selectedType, setSelectedType] = useState('Todos');
   const [maxPrice, setMaxPrice] = useState('');
+  const overlayOpacity = Math.min(100, Math.max(0, Number(content.heroOverlayOpacity) || 45)) / 100;
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -36,7 +37,12 @@ export default function Hero({ onSearch, locations, types, content }) {
         className={styles.heroBg}
         style={content.heroBackgroundImage ? { backgroundImage: `url(${content.heroBackgroundImage})` } : undefined}
       ></div>
-      <div className={styles.heroOverlay}></div>
+      <div
+        className={styles.heroOverlay}
+        style={{
+          background: `linear-gradient(135deg, rgba(183, 28, 28, ${overlayOpacity}) 0%, rgba(15, 23, 42, ${overlayOpacity}) 100%)`
+        }}
+      ></div>
       
       <div className={`${styles.contentContainer} container`}>
         <div className={styles.heroTextContent}>

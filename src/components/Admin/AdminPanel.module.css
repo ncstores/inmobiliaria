@@ -524,6 +524,44 @@
   gap: 10px;
 }
 
+.overlayControl {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-white);
+  padding: 12px;
+}
+
+.overlayControlHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-dark);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.overlayControlHeader strong {
+  color: var(--primary-red);
+  font-size: 14px;
+}
+
+.rangeInput {
+  width: 100%;
+  accent-color: var(--primary-red);
+  margin: 10px 0 4px;
+}
+
+.rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-light);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .migrationActions {
   display: flex;
   flex-wrap: wrap;

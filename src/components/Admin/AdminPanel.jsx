@@ -1214,6 +1214,26 @@ export default function AdminPanel({ onBackToSite }) {
                   <small style={{ color: 'var(--text-light)', fontSize: '11px' }}>
                     Se mostrará detrás del título principal y el buscador. Recomendado: imagen horizontal y amplia.
                   </small>
+                  <div className={styles.overlayControl}>
+                    <div className={styles.overlayControlHeader}>
+                      <span>Oscuridad del fondo</span>
+                      <strong>{contentForm.heroOverlayOpacity || '45'}%</strong>
+                    </div>
+                    <input
+                      type="range"
+                      name="heroOverlayOpacity"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={contentForm.heroOverlayOpacity || '45'}
+                      onChange={handleContentChange}
+                      className={styles.rangeInput}
+                    />
+                    <div className={styles.rangeLabels}>
+                      <span>Más claro</span>
+                      <span>Más oscuro</span>
+                    </div>
+                  </div>
                   {contentForm.heroBackgroundImage && (
                     <button type="button" onClick={clearHeroBackground} className={styles.deleteBtn} style={{ width: 'fit-content' }}>
                       Quitar Imagen de Fondo

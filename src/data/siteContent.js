@@ -5,6 +5,7 @@ export const defaultSiteContent = {
   brandSubtitle: 'Administraciones',
   logoImage: '',
   heroBackgroundImage: '',
+  heroOverlayOpacity: '45',
   headerCtaText: 'Llamar Ahora',
   heroBadge: 'CONFIANZA Y TRAYECTORIA',
   heroTitle: 'Administración Profesional de Consorcios y Alquileres',

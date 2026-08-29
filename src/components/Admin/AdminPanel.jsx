@@ -1538,9 +1538,8 @@ export default function AdminPanel({ onBackToSite }) {
                   <th>Imagen</th>
                   <th>Propiedad / Dirección</th>
                   <th>Barrio</th>
-                  <th>Alquiler</th>
+                  <th>Alquiler / Expensas</th>
                   <th>Estado</th>
-                  <th>Expensas</th>
                   <th>Medidas</th>
                   <th style={{ textAlign: 'center' }}>Acciones</th>
                 </tr>
@@ -1558,13 +1557,17 @@ export default function AdminPanel({ onBackToSite }) {
                       </div>
                     </td>
                     <td><span className={styles.tableLocation}>{p.location}</span></td>
-                    <td><strong className={styles.tablePrice}>{formatCurrency(p.price)}</strong></td>
+                    <td>
+                      <div className={styles.tableMoneyCell}>
+                        <strong className={styles.tablePrice}>{formatCurrency(p.price)}</strong>
+                        <span className={styles.tableExpenses}>Exp. {formatCurrency(p.expenses)}</span>
+                      </div>
+                    </td>
                     <td>
                       <span className={`${styles.statusBadge} ${p.operation === 'Alquilado' ? styles.statusRented : styles.statusAvailable}`}>
                         {p.operation === 'Alquilado' ? 'Alquilado' : 'Disponible'}
                       </span>
                     </td>
-                    <td><span className={styles.tableExpenses}>{formatCurrency(p.expenses)}</span></td>
                     <td>
                       <span className={styles.tableSpecs}>
                         {p.surface} m² | {p.bedrooms === 0 ? 'Mono.' : `${p.bedrooms} Dorm`}
@@ -1587,7 +1590,7 @@ export default function AdminPanel({ onBackToSite }) {
                 ))}
                 {properties.length === 0 && (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                       No hay departamentos en la base de datos local. Hace clic en "Cargar Propiedad" para dar de alta uno nuevo.
                     </td>
                   </tr>

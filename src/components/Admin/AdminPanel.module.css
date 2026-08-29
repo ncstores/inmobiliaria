@@ -594,24 +594,33 @@
 
 .tableWrapper {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed;
 }
 
+.table th:nth-child(1), .table td:nth-child(1) { width: 8%; }
+.table th:nth-child(2), .table td:nth-child(2) { width: 28%; }
+.table th:nth-child(3), .table td:nth-child(3) { width: 12%; }
+.table th:nth-child(4), .table td:nth-child(4) { width: 15%; }
+.table th:nth-child(5), .table td:nth-child(5) { width: 13%; }
+.table th:nth-child(6), .table td:nth-child(6) { width: 12%; }
+.table th:nth-child(7), .table td:nth-child(7) { width: 12%; }
+
 .table th, .table td {
-  padding: 16px 20px;
+  padding: 14px 10px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
 .table th {
   font-family: var(--font-heading);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -620,8 +629,8 @@
 }
 
 .tableThumbnail {
-  width: 60px;
-  height: 45px;
+  width: 48px;
+  height: 38px;
   object-fit: cover;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
@@ -631,7 +640,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 250px;
+  max-width: 100%;
 }
 
 .tablePropName {
@@ -656,8 +665,14 @@
 
 .tablePrice {
   color: var(--primary-red);
-  font-size: 15px;
+  font-size: 14px;
   font-family: var(--font-heading);
+}
+
+.tableMoneyCell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .statusBadge {
@@ -684,9 +699,10 @@
 }
 
 .tableExpenses {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .tableSpecs {
@@ -696,8 +712,9 @@
 
 .actionButtonsRow {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
+  flex-wrap: nowrap;
 }
 
 .locationForm {
@@ -740,7 +757,7 @@
 .editBtn, .deleteBtn, .printBtn {
   background: none;
   border: 1px solid var(--border-color);
-  padding: 8px;
+  padding: 7px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;

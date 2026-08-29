@@ -881,7 +881,8 @@ export default function AdminPanel({ onBackToSite }) {
       return;
     }
 
-    const propertyUrl = `${window.location.origin}/?propiedad=${encodeURIComponent(property.id)}`;
+    const publicSiteUrl = 'https://administracionesvergnano.com.ar';
+    const propertyUrl = `${publicSiteUrl}/?propiedad=${encodeURIComponent(property.id)}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(propertyUrl)}`;
     const isRented = property.operation === 'Alquilado';
     const imageList = (property.images || []).filter(Boolean).slice(0, 3);

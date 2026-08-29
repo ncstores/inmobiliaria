@@ -884,8 +884,8 @@ export default function AdminPanel({ onBackToSite }) {
     const propertyUrl = `${window.location.origin}/?propiedad=${encodeURIComponent(property.id)}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(propertyUrl)}`;
     const isRented = property.operation === 'Alquilado';
-    const imageList = (property.images || []).filter(Boolean).slice(0, 4);
-    const amenitiesList = (property.amenities || []).slice(0, 8);
+    const imageList = (property.images || []).filter(Boolean).slice(0, 3);
+    const amenitiesList = (property.amenities || []).slice(0, 6);
     const bedroomsText = property.bedrooms === 0 ? 'Monoambiente' : `${property.bedrooms} Dorm.`;
     const statusText = isRented ? 'Alquilado' : 'Disponible';
     const heroImage = imageList[0] || '';
@@ -910,41 +910,41 @@ export default function AdminPanel({ onBackToSite }) {
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #e5e7eb; color: #0f172a; font-family: Arial, sans-serif; }
-    .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; background: #f8fafc; padding: 12mm; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-    .top-bar { height: 10mm; background: #173f5f; margin: -12mm -12mm 8mm; }
-    .brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 6mm; text-align: left; }
-    .brand-logo { width: 54px; height: 54px; object-fit: contain; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; padding: 4px; }
-    .brand-logo-fallback { width: 54px; height: 54px; border-radius: 12px; background: #d32f2f; color: #ffc107; display: grid; place-items: center; font-weight: 900; font-size: 24px; }
-    .brand-name { margin: 0; font-size: 20px; color: #d32f2f; letter-spacing: 0.5px; text-transform: uppercase; }
-    .brand-subtitle { margin: 2px 0 0; font-size: 11px; color: #475569; letter-spacing: 2px; text-transform: uppercase; }
-    .headline { text-align: center; margin-bottom: 5mm; }
-    .kicker { color: #0f172a; font-size: 24px; font-weight: 900; line-height: 0.92; text-transform: uppercase; letter-spacing: -1px; }
-    .kicker strong { display: block; color: #173f5f; font-size: 52px; }
-    .status { display: inline-flex; margin-top: 5mm; border-radius: 999px; background: ${isRented ? '#c62828' : '#2e7d32'}; color: #fff; padding: 8px 16px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
-    .title-card { background: #fff; border-left: 7px solid #ffc107; border-radius: 14px; padding: 12px 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); margin-bottom: 5mm; text-align: center; }
-    .property-title { margin: 0 0 5px; font-size: 23px; line-height: 1.12; }
-    .address { margin: 0; color: #64748b; font-size: 14px; }
-    .hero { height: 70mm; border-radius: 14px; overflow: hidden; background: #dbe4ea; margin-bottom: 5mm; position: relative; }
+    .sheet { width: 210mm; height: 297mm; margin: 0 auto; background: #f8fafc; padding: 8mm 10mm 13mm; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    .top-bar { height: 7mm; background: #173f5f; margin: -8mm -10mm 5mm; }
+    .brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4mm; text-align: left; }
+    .brand-logo { width: 42px; height: 42px; object-fit: contain; border-radius: 10px; background: #fff; border: 1px solid #e2e8f0; padding: 3px; }
+    .brand-logo-fallback { width: 42px; height: 42px; border-radius: 10px; background: #d32f2f; color: #ffc107; display: grid; place-items: center; font-weight: 900; font-size: 20px; }
+    .brand-name { margin: 0; font-size: 18px; color: #d32f2f; letter-spacing: 0.5px; text-transform: uppercase; }
+    .brand-subtitle { margin: 2px 0 0; font-size: 10px; color: #475569; letter-spacing: 1.7px; text-transform: uppercase; }
+    .headline { text-align: center; margin-bottom: 4mm; }
+    .kicker { color: #0f172a; font-size: 19px; font-weight: 900; line-height: 0.92; text-transform: uppercase; letter-spacing: -0.6px; }
+    .kicker strong { display: block; color: #173f5f; font-size: 39px; }
+    .status { display: inline-flex; margin-top: 3mm; border-radius: 999px; background: ${isRented ? '#c62828' : '#2e7d32'}; color: #fff; padding: 6px 13px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+    .title-card { background: #fff; border-left: 6px solid #ffc107; border-radius: 12px; padding: 9px 14px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08); margin-bottom: 4mm; text-align: center; }
+    .property-title { margin: 0 0 4px; font-size: 20px; line-height: 1.08; max-height: 22mm; overflow: hidden; }
+    .address { margin: 0; color: #64748b; font-size: 12px; }
+    .hero { height: 56mm; border-radius: 12px; overflow: hidden; background: #dbe4ea; margin-bottom: 4mm; position: relative; }
     .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .hero .price { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: rgba(211, 47, 47, 0.95); color: #fff; border-radius: 12px; padding: 11px 18px; font-size: 24px; font-weight: 900; white-space: nowrap; }
-    .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 5mm; }
-    .feature { background: #d9e4ec; color: #0f172a; text-align: center; padding: 9px 7px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-    .feature strong { display: block; font-size: 15px; margin-bottom: 2px; }
-    .photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 5mm; }
-    .photo { height: 34mm; overflow: hidden; background: #e2e8f0; }
-    .photo-main { grid-column: span 1; height: 34mm; }
+    .hero .price { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: rgba(211, 47, 47, 0.95); color: #fff; border-radius: 10px; padding: 9px 15px; font-size: 21px; font-weight: 900; white-space: nowrap; }
+    .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 4mm; }
+    .feature { background: #d9e4ec; color: #0f172a; text-align: center; padding: 7px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    .feature strong { display: block; font-size: 13px; margin-bottom: 1px; }
+    .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 4mm; }
+    .photo { height: 27mm; overflow: hidden; background: #e2e8f0; }
+    .photo-main { grid-column: span 1; height: 27mm; }
     .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .content { display: grid; grid-template-columns: 1fr 48mm; gap: 8mm; align-items: start; margin-top: auto; }
-    .section-title { margin: 0 0 6px; color: #173f5f; font-size: 14px; text-transform: uppercase; }
-    .description { margin: 0 0 9px; color: #334155; font-size: 12px; line-height: 1.38; max-height: 32mm; overflow: hidden; }
-    .amenities { columns: 2; margin: 0; padding-left: 18px; color: #334155; font-size: 11px; line-height: 1.35; }
-    .qr-card { background: #fff; border: 1px solid #dbe4ea; border-radius: 14px; padding: 10px; text-align: center; }
-    .qr-card img { width: 38mm; height: 38mm; }
-    .qr-card strong { display: block; font-size: 12px; margin: 6px 0 4px; }
-    .qr-card span { display: block; color: #64748b; font-size: 9px; line-height: 1.25; overflow-wrap: anywhere; }
-    .contact { margin-top: 7px; border-top: 1px solid #e2e8f0; padding-top: 7px; font-size: 10px; color: #334155; }
-    .bottom-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 10mm; background: #173f5f; }
-    @media print { body { background: #fff; } .sheet { margin: 0; width: 210mm; min-height: 297mm; box-shadow: none; } @page { size: A4 portrait; margin: 0; } }
+    .content { display: grid; grid-template-columns: 1fr 43mm; gap: 6mm; align-items: start; min-height: 0; }
+    .section-title { margin: 0 0 5px; color: #173f5f; font-size: 12px; text-transform: uppercase; }
+    .description { margin: 0 0 7px; color: #334155; font-size: 10.5px; line-height: 1.28; max-height: 23mm; overflow: hidden; }
+    .amenities { columns: 2; margin: 0; padding-left: 16px; color: #334155; font-size: 9.5px; line-height: 1.25; max-height: 22mm; overflow: hidden; }
+    .qr-card { background: #fff; border: 1px solid #dbe4ea; border-radius: 12px; padding: 8px; text-align: center; }
+    .qr-card img { width: 31mm; height: 31mm; }
+    .qr-card strong { display: block; font-size: 10px; margin: 5px 0 3px; }
+    .qr-card span { display: block; color: #64748b; font-size: 8px; line-height: 1.15; overflow-wrap: anywhere; }
+    .contact { margin-top: 5px; border-top: 1px solid #e2e8f0; padding-top: 5px; font-size: 8.5px; color: #334155; }
+    .bottom-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 8mm; background: #173f5f; }
+    @media print { body { background: #fff; } .sheet { margin: 0; width: 210mm; height: 297mm; box-shadow: none; page-break-after: avoid; } @page { size: A4 portrait; margin: 0; } }
   </style>
 </head>
 <body onload="setTimeout(() => window.print(), 500)">

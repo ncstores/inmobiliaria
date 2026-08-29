@@ -123,6 +123,31 @@ export default function App() {
     setFilters(newFilters);
   };
 
+  useEffect(() => {
+    if (isLoadingData || allProperties.length === 0) return;
+
+    const propertyId = new URLSearchParams(window.location.search).get('propiedad');
+    if (!propertyId) return;
+
+    const property = allProperties.find((item) => item.id.toString() === propertyId);
+    if (property) {
+      setSelectedProperty(property);
+      setFilters({
+        location: 'Todos',
+        type: 'Todos',
+        minPrice: '',
+        maxPrice: ''
+      });
+    }
+  }, [isLoadingData, allProperties]);
+
+  const handleCloseProperty = () => {
+    setSelectedProperty(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('propiedad');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
   const handleBackToSite = () => {
     window.location.hash = '';
     if (window.location.pathname === '/admin') {
@@ -186,7 +211,7 @@ export default function App() {
         <PropertyDetailDrawer 
           property={selectedProperty} 
           content={siteContent}
-          onClose={() => setSelectedProperty(null)}
+          onClose={handleCloseProperty}
         />
       )}
     </>

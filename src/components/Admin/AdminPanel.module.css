@@ -737,7 +737,7 @@
   }
 }
 
-.editBtn, .deleteBtn {
+.editBtn, .deleteBtn, .printBtn {
   background: none;
   border: 1px solid var(--border-color);
   padding: 8px;
@@ -751,6 +751,15 @@
 
 .editBtn {
   color: var(--text-dark);
+}
+
+.printBtn {
+  color: #173F5F;
+}
+
+.printBtn:hover {
+  background-color: #E3F2FD;
+  border-color: rgba(23, 63, 95, 0.25);
 }
 
 .editBtn:hover {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Edit3, LogOut, Building, TrendingUp, Coins, Lock, X, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Edit3, LogOut, Building, TrendingUp, Coins, Lock, X, ExternalLink, Printer } from 'lucide-react';
 import { getStoredLocations, getStoredProperties, getStoredTypes, saveLocations, saveProperties, saveTypes } from '../../data/propertiesMockData';
 import { defaultSiteContent, getStoredSiteContent, saveSiteContent } from '../../data/siteContent';
 import { hasSupabaseConfig, supabase } from '../../data/supabaseClient';
@@ -867,6 +867,141 @@ export default function AdminPanel({ onBackToSite }) {
     }
   };
 
+  const escapeHtml = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  const handlePrintPropertySheet = (property) => {
+    const printWindow = window.open('', '_blank', 'width=900,height=1200');
+    if (!printWindow) {
+      showToast('El navegador bloqueó la ventana de impresión.', 'error');
+      return;
+    }
+
+    const propertyUrl = `${window.location.origin}/?propiedad=${encodeURIComponent(property.id)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(propertyUrl)}`;
+    const isRented = property.operation === 'Alquilado';
+    const imageList = (property.images || []).filter(Boolean).slice(0, 4);
+    const amenitiesList = (property.amenities || []).slice(0, 8);
+    const bedroomsText = property.bedrooms === 0 ? 'Monoambiente' : `${property.bedrooms} Dorm.`;
+    const statusText = isRented ? 'Alquilado' : 'Disponible';
+    const heroImage = imageList[0] || '';
+
+    const imagesHtml = imageList.map((image, index) => `
+      <div class="photo ${index === 0 ? 'photo-main' : ''}">
+        <img src="${escapeHtml(image)}" alt="Foto ${index + 1}">
+      </div>
+    `).join('');
+
+    const amenitiesHtml = amenitiesList.map((amenity) => `<li>${escapeHtml(amenity)}</li>`).join('');
+    const logoHtml = contentForm.logoImage
+      ? `<img src="${escapeHtml(contentForm.logoImage)}" alt="${escapeHtml(contentForm.brandName)}" class="brand-logo">`
+      : `<div class="brand-logo-fallback">${escapeHtml((contentForm.brandName || 'V').charAt(0))}</div>`;
+
+    const printHtml = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ficha A4 - ${escapeHtml(property.title)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e5e7eb; color: #0f172a; font-family: Arial, sans-serif; }
+    .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; background: #f8fafc; padding: 13mm; position: relative; overflow: hidden; }
+    .top-bar { height: 11mm; background: #173f5f; margin: -13mm -13mm 10mm; }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 9mm; }
+    .brand-logo { width: 54px; height: 54px; object-fit: contain; border-radius: 12px; background: #fff; border: 1px solid #e2e8f0; padding: 4px; }
+    .brand-logo-fallback { width: 54px; height: 54px; border-radius: 12px; background: #d32f2f; color: #ffc107; display: grid; place-items: center; font-weight: 900; font-size: 24px; }
+    .brand-name { margin: 0; font-size: 20px; color: #d32f2f; letter-spacing: 0.5px; text-transform: uppercase; }
+    .brand-subtitle { margin: 2px 0 0; font-size: 11px; color: #475569; letter-spacing: 2px; text-transform: uppercase; }
+    .headline { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; margin-bottom: 7mm; }
+    .kicker { color: #173f5f; font-size: 24px; font-weight: 900; line-height: 0.95; text-transform: uppercase; }
+    .kicker strong { display: block; color: #0f172a; font-size: 42px; }
+    .status { display: inline-flex; border-radius: 999px; background: ${isRented ? '#c62828' : '#2e7d32'}; color: #fff; padding: 8px 14px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .title-card { background: #fff; border-left: 7px solid #ffc107; border-radius: 14px; padding: 14px 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); margin-bottom: 7mm; }
+    .property-title { margin: 0 0 6px; font-size: 25px; line-height: 1.15; }
+    .address { margin: 0; color: #64748b; font-size: 14px; }
+    .hero { height: 82mm; border-radius: 16px; overflow: hidden; background: #dbe4ea; margin-bottom: 6mm; position: relative; }
+    .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hero .price { position: absolute; left: 16px; bottom: 16px; background: rgba(211, 47, 47, 0.94); color: #fff; border-radius: 12px; padding: 12px 16px; font-size: 24px; font-weight: 900; }
+    .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 6mm; }
+    .feature { background: #d9e4ec; color: #0f172a; text-align: center; padding: 10px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .feature strong { display: block; font-size: 16px; margin-bottom: 2px; }
+    .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 6mm; }
+    .photo { height: 33mm; overflow: hidden; background: #e2e8f0; }
+    .photo-main { grid-column: span 2; height: 45mm; }
+    .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .content { display: grid; grid-template-columns: 1fr 52mm; gap: 10mm; align-items: start; }
+    .section-title { margin: 0 0 7px; color: #173f5f; font-size: 15px; text-transform: uppercase; }
+    .description { margin: 0 0 10px; color: #334155; font-size: 13px; line-height: 1.45; }
+    .amenities { columns: 2; margin: 0; padding-left: 18px; color: #334155; font-size: 12px; line-height: 1.45; }
+    .qr-card { background: #fff; border: 1px solid #dbe4ea; border-radius: 14px; padding: 12px; text-align: center; }
+    .qr-card img { width: 42mm; height: 42mm; }
+    .qr-card strong { display: block; font-size: 13px; margin: 7px 0 4px; }
+    .qr-card span { display: block; color: #64748b; font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
+    .contact { margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 11px; color: #334155; }
+    .bottom-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 11mm; background: #173f5f; }
+    @media print { body { background: #fff; } .sheet { margin: 0; width: 210mm; min-height: 297mm; box-shadow: none; } @page { size: A4; margin: 0; } }
+  </style>
+</head>
+<body onload="setTimeout(() => window.print(), 500)">
+  <main class="sheet">
+    <div class="top-bar"></div>
+    <header class="brand">
+      ${logoHtml}
+      <div>
+        <h1 class="brand-name">${escapeHtml(contentForm.brandName)}</h1>
+        <p class="brand-subtitle">${escapeHtml(contentForm.brandSubtitle)}</p>
+      </div>
+    </header>
+    <section class="headline">
+      <div class="kicker">Departamento <strong>en alquiler</strong></div>
+      <div class="status">${statusText}</div>
+    </section>
+    <section class="title-card">
+      <h2 class="property-title">${escapeHtml(property.title)}</h2>
+      <p class="address">${escapeHtml(property.address)}, ${escapeHtml(property.location)}</p>
+    </section>
+    <section class="hero">
+      ${heroImage ? `<img src="${escapeHtml(heroImage)}" alt="${escapeHtml(property.title)}">` : ''}
+      <div class="price">${formatCurrency(property.price)}</div>
+    </section>
+    <section class="features">
+      <div class="feature"><strong>${escapeHtml(String(property.surface))}</strong>m2</div>
+      <div class="feature"><strong>${escapeHtml(bedroomsText)}</strong>Dormitorios</div>
+      <div class="feature"><strong>${escapeHtml(String(property.bathrooms))}</strong>Baños</div>
+      <div class="feature"><strong>${formatCurrency(property.expenses)}</strong>Expensas</div>
+    </section>
+    ${imageList.length > 1 ? `<section class="photos">${imagesHtml}</section>` : ''}
+    <section class="content">
+      <div>
+        <h3 class="section-title">Descripción</h3>
+        <p class="description">${escapeHtml(property.description)}</p>
+        ${amenitiesHtml ? `<h3 class="section-title">Comodidades</h3><ul class="amenities">${amenitiesHtml}</ul>` : ''}
+      </div>
+      <aside class="qr-card">
+        <img src="${qrUrl}" alt="QR de la propiedad">
+        <strong>Escaneá y mirala en tu celular</strong>
+        <span>${escapeHtml(propertyUrl)}</span>
+        <div class="contact">
+          ${escapeHtml(contentForm.contactPhone || '')}<br>
+          ${escapeHtml(contentForm.contactEmail || '')}
+        </div>
+      </aside>
+    </section>
+    <div class="bottom-bar"></div>
+  </main>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -1436,6 +1571,9 @@ export default function AdminPanel({ onBackToSite }) {
                     </td>
                     <td>
                       <div className={styles.actionButtonsRow}>
+                        <button onClick={() => handlePrintPropertySheet(p)} className={styles.printBtn} title="Generar ficha A4">
+                          <Printer size={15} />
+                        </button>
                         <button onClick={() => openEditModal(p)} className={styles.editBtn} title="Editar">
                           <Edit3 size={15} />
                         </button>

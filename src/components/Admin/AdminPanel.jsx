@@ -85,6 +85,7 @@ const contentSections = [
       ['contactHoursLabel', 'Rótulo horarios'],
       ['contactHours', 'Horarios'],
       ['whatsappNumber', 'Número WhatsApp sin + ni espacios'],
+      ['webmailUrl', 'URL Webmail'],
       ['googleMapsUrl', 'URL de Google Maps', 'textarea']
     ]
   },

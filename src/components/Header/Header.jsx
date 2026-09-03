@@ -60,6 +60,7 @@ export default function Header({ content }) {
           <a href="#inicio" onClick={(e) => handleLinkClick(e, 'inicio')} className={styles.navLink}>Inicio</a>
           <a href="#propiedades" onClick={(e) => handleLinkClick(e, 'propiedades')} className={styles.navLink}>Propiedades</a>
           <a href="#contacto" onClick={(e) => handleLinkClick(e, 'contacto')} className={styles.navLink}>Contacto</a>
+          {content.webmailUrl && <a href={content.webmailUrl} target="_blank" rel="noreferrer" className={styles.navLink}>Webmail</a>}
         </nav>
 
         <div className={styles.ctaDesktop}>
@@ -82,6 +83,7 @@ export default function Header({ content }) {
             <a href="#inicio" onClick={(e) => handleLinkClick(e, 'inicio')} className={styles.mobileNavLink}>Inicio</a>
             <a href="#propiedades" onClick={(e) => handleLinkClick(e, 'propiedades')} className={styles.mobileNavLink}>Propiedades</a>
             <a href="#contacto" onClick={(e) => handleLinkClick(e, 'contacto')} className={styles.mobileNavLink}>Contacto</a>
+            {content.webmailUrl && <a href={content.webmailUrl} target="_blank" rel="noreferrer" className={styles.mobileNavLink}>Webmail</a>}
             <a 
               href={`https://wa.me/${content.whatsappNumber}`} 
               target="_blank" 

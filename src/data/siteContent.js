@@ -55,6 +55,7 @@ export const defaultSiteContent = {
   contactHoursLabel: 'Horarios de Atención',
   contactHours: 'Lunes a Viernes de 9:00 a 17:00 hs',
   whatsappNumber: '5493512345678',
+  webmailUrl: 'https://webmail.administracionesvergnano.com.ar',
   googleMapsUrl: 'https://maps.google.com/maps?q=Av.%20Chacabuco%20600,%20Cordoba,%20Argentina&t=&z=16&ie=UTF8&iwloc=&output=embed',
   footerMotto: 'Administración responsable de consorcios y corretaje inmobiliario. Honestidad, eficiencia y cercanía a tu servicio.',
   footerEmergencyTitle: 'Urgencias Copropietarios',

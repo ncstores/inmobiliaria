@@ -96,6 +96,7 @@ export default function Footer({ content }) {
             <li><a href="#inicio" onClick={(e) => handleLinkClick(e, 'inicio')}>Inicio</a></li>
             <li><a href="#propiedades" onClick={(e) => handleLinkClick(e, 'propiedades')}>Propiedades</a></li>
             <li><a href="#contacto" onClick={(e) => handleLinkClick(e, 'contacto')}>Contacto</a></li>
+            {hasValue(content.webmailUrl) && <li><a href={content.webmailUrl} target="_blank" rel="noreferrer">Webmail</a></li>}
           </ul>
         </div>
 

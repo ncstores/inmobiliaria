@@ -4,6 +4,8 @@ import { getStoredLocations, getStoredProperties, getStoredTypes, saveLocations,
 import { defaultSiteContent, getStoredSiteContent, saveSiteContent } from '../../data/siteContent';
 import { hasSupabaseConfig, supabase } from '../../data/supabaseClient';
 import { usesVercelStorage, storageRequest } from '../../data/vercelStorage';
+import { parseCatalogBackup } from '../../data/catalogBackup';
+import exportCatalogSql from '../../data/exportCatalog.sql?raw';
 import styles from './AdminPanel.module.css';
 
 const contentSections = [
@@ -671,6 +673,7 @@ export default function AdminPanel({ onBackToSite }) {
   };
 
   const applyBackup = async (backup) => {
+    backup = parseCatalogBackup(backup);
     const nextProperties = backup.properties || [];
     const nextLocations = backup.locations || [];
     const nextTypes = backup.types || [];
@@ -686,11 +689,6 @@ export default function AdminPanel({ onBackToSite }) {
     if (backup.adminAuth && !usesVercelStorage) {
       localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(backup.adminAuth));
     }
-
-    setProperties(nextProperties);
-    setLocations(nextLocations);
-    setTypes(nextTypes);
-    setContentForm(nextContent);
 
     if (hasSupabaseConfig || usesVercelStorage) {
       const results = [
@@ -710,6 +708,19 @@ export default function AdminPanel({ onBackToSite }) {
         if (error) throw error;
       }
     }
+    setProperties(nextProperties);
+    setLocations(nextLocations);
+    setTypes(nextTypes);
+    setContentForm(nextContent);
+  };
+
+  const copyExportSql = async () => {
+    try {
+      await navigator.clipboard.writeText(exportCatalogSql);
+      showToast('Consulta copiada. Pegala en SQL Editor de Supabase y exportá el resultado como JSON.');
+    } catch {
+      showToast('El navegador no permitió copiar la consulta.', 'error');
+    }
   };
 
   const handleImportBackup = async (e) => {
@@ -720,7 +731,8 @@ export default function AdminPanel({ onBackToSite }) {
     setMigrationError('');
 
     try {
-      const backup = JSON.parse(await file.text());
+      const backup = parseCatalogBackup(JSON.parse(await file.text()));
+      if (!window.confirm(`Se importarán ${backup.properties.length} propiedades, barrios, tipologías y contenido. Esto reemplaza el catálogo de destino. ¿Continuar?`)) return;
       await applyBackup(backup);
       setMigrationMessage(usesVercelStorage || hasSupabaseConfig
         ? 'Backup importado y guardado online correctamente.'
@@ -729,7 +741,7 @@ export default function AdminPanel({ onBackToSite }) {
       showToast(usesVercelStorage || hasSupabaseConfig ? 'Backup importado y guardado correctamente.' : 'Backup importado localmente.');
     } catch (error) {
       console.error('Error importing backup', error);
-      setMigrationError('No se pudo importar el backup. Verificá que sea un archivo JSON válido exportado desde este sistema.');
+      setMigrationError(error.message || 'No se pudo importar el backup. Verificá el archivo JSON.');
       showToast('No se pudo importar el backup.', 'error');
     } finally {
       e.target.value = '';
@@ -1248,7 +1260,9 @@ export default function AdminPanel({ onBackToSite }) {
             <p className={styles.sectionHint}>
               {usesVercelStorage ? 'La migración copia propiedades, fotos, barrios, tipologías, textos, logo y fondo desde Supabase a Vercel. El acceso al panel se configura con ADMIN_PASSWORD en Vercel.' : 'Este proceso lee propiedades, fotos, barrios, tipologías, textos, logo y contraseña guardados en este navegador y los sube a Supabase.'}
             </p>
+            {usesVercelStorage && <p className={styles.sectionHint}>Si la API de Supabase está restringida, copiá la consulta, ejecutala en SQL Editor y exportá el resultado como JSON. Después usá Importar Backup JSON.</p>}
             <div className={styles.migrationActions}>
+              {usesVercelStorage && <button type="button" onClick={copyExportSql} className="btn btn-outline" style={{ padding: '10px 20px' }}>Copiar SQL de exportación</button>}
               <button type="button" onClick={handleExportLocalData} className="btn btn-outline" style={{ padding: '10px 20px' }}>
                 {usesVercelStorage ? 'Exportar Backup' : 'Exportar Backup Local'}
               </button>

@@ -32,6 +32,17 @@ Conservar una exportación externa del origen antes de activar el nuevo backend.
 
 ## Funcionamiento
 
+### Si Supabase restringe su API por cuota
+
+Si Table Editor o SQL Editor todavía permiten consultar, usar en el admin
+**Copiar SQL de exportación**, pegarlo en SQL Editor de Supabase y ejecutar.
+Exportar el resultado completo en JSON e importarlo mediante **Importar Backup
+JSON**. La consulta `src/data/exportCatalog.sql` sólo lee el catálogo, excluye
+credenciales y conserva fotos, logo, fondo y coordenadas. El importador acepta
+el formato directo de la app y el array de resultados del SQL Editor; rechaza
+archivos incompletos antes de guardar. Si SQL Editor también está restringido,
+resolver el acceso con Supabase o usar una copia de respaldo previa.
+
 - `/api/storage` permite lecturas de las cuatro claves públicas del catálogo.
 - Las escrituras requieren una sesión firmada, HttpOnly, Secure, de 8 horas.
 - La contraseña del admin se cambia en Vercel, no se guarda en Blob.

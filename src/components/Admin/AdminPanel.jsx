@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit3, LogOut, Building, TrendingUp, Coins, Lock, X, Exte
 import { getStoredLocations, getStoredProperties, getStoredTypes, saveLocations, saveProperties, saveTypes } from '../../data/propertiesMockData';
 import { defaultSiteContent, getStoredSiteContent, saveSiteContent } from '../../data/siteContent';
 import { hasSupabaseConfig, supabase } from '../../data/supabaseClient';
+import { usesVercelStorage, storageRequest } from '../../data/vercelStorage';
 import styles from './AdminPanel.module.css';
 
 const contentSections = [
@@ -145,6 +146,7 @@ const getStoredAuth = async () => {
 };
 
 const saveAdminPassword = async (newPassword) => {
+  if (usesVercelStorage) throw new Error('La contraseña se administra en ADMIN_PASSWORD dentro de Vercel.');
   const salt = createSalt();
   const passwordHash = await hashPassword(newPassword, salt);
   const authData = { salt, passwordHash, updatedAt: Date.now() };
@@ -163,6 +165,10 @@ const saveAdminPassword = async (newPassword) => {
 };
 
 const verifyAdminPassword = async (password) => {
+  if (usesVercelStorage) {
+    try { return await storageRequest({ action: 'login', password }); }
+    catch { return false; }
+  }
   const auth = await getStoredAuth();
 
   if (!auth) {
@@ -222,6 +228,7 @@ export default function AdminPanel({ onBackToSite }) {
   const [migrationMessage, setMigrationMessage] = useState('');
   const [migrationError, setMigrationError] = useState('');
   const [toast, setToast] = useState(null);
+  const [storageReady, setStorageReady] = useState(false);
   const toastTimeoutRef = useRef(null);
 
   const showToast = (message, type = 'success') => {
@@ -237,19 +244,27 @@ export default function AdminPanel({ onBackToSite }) {
     let isMounted = true;
 
     async function loadAdminData() {
-      const [storedProperties, storedLocations, storedTypes, storedContent] = await Promise.all([
-        getStoredProperties(),
-        getStoredLocations(),
-        getStoredTypes(),
-        getStoredSiteContent()
-      ]);
+      try {
+        const [storedProperties, storedLocations, storedTypes, storedContent] = await Promise.all([
+          getStoredProperties(),
+          getStoredLocations(),
+          getStoredTypes(),
+          getStoredSiteContent()
+        ]);
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      setProperties(storedProperties);
-      setLocations(storedLocations);
-      setTypes(storedTypes);
-      setContentForm(storedContent);
+        setProperties(storedProperties);
+        setLocations(storedLocations);
+        setTypes(storedTypes);
+        setContentForm(storedContent);
+        setStorageReady(true);
+      } catch (error) {
+        if (!isMounted) return;
+        setStorageReady(false);
+        setActiveTab('migration');
+        showToast(error.message, 'error');
+      }
     }
 
     loadAdminData();
@@ -289,6 +304,10 @@ export default function AdminPanel({ onBackToSite }) {
   };
 
   const handleSendRecoveryEmail = () => {
+    if (usesVercelStorage) {
+      showToast('Restablecé ADMIN_PASSWORD en las variables de Vercel y redesplegá el proyecto.', 'error');
+      return;
+    }
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 15 * 60 * 1000;
     localStorage.setItem(ADMIN_RESET_KEY, JSON.stringify({ code, expiresAt }));
@@ -320,6 +339,7 @@ export default function AdminPanel({ onBackToSite }) {
 
   const handleResetLogin = async (e) => {
     e.preventDefault();
+    if (usesVercelStorage) return;
 
     if (!verifyRecoveryCode(resetCode)) {
       setLoginError('Código inválido o vencido.');
@@ -333,6 +353,7 @@ export default function AdminPanel({ onBackToSite }) {
   };
 
   const handleLogout = () => {
+    if (usesVercelStorage) storageRequest({ action: 'logout' }).catch(console.error);
     setIsLoggedIn(false);
     setPassword('');
   };
@@ -586,6 +607,10 @@ export default function AdminPanel({ onBackToSite }) {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+    if (usesVercelStorage) {
+      showToast('Cambiá ADMIN_PASSWORD en Vercel y redesplegá para actualizar la contraseña.', 'error');
+      return;
+    }
     const { currentPassword, newPassword, confirmPassword, recoveryCode } = securityForm;
 
     if (newPassword.length < 6) {
@@ -625,11 +650,11 @@ export default function AdminPanel({ onBackToSite }) {
   };
 
   const getLocalBackup = () => ({
-    properties: readLocalJson(LOCAL_PROPERTIES_KEY, []),
-    locations: readLocalJson(LOCAL_LOCATIONS_KEY, []),
-    types: readLocalJson(LOCAL_TYPES_KEY, []),
-    siteContent: readLocalJson(LOCAL_CONTENT_KEY, defaultSiteContent),
-    adminAuth: readLocalJson(ADMIN_AUTH_KEY, null),
+    properties: usesVercelStorage ? properties : readLocalJson(LOCAL_PROPERTIES_KEY, []),
+    locations: usesVercelStorage ? locations : readLocalJson(LOCAL_LOCATIONS_KEY, []),
+    types: usesVercelStorage ? types : readLocalJson(LOCAL_TYPES_KEY, []),
+    siteContent: usesVercelStorage ? contentForm : readLocalJson(LOCAL_CONTENT_KEY, defaultSiteContent),
+    adminAuth: usesVercelStorage ? null : readLocalJson(ADMIN_AUTH_KEY, null),
     exportedAt: new Date().toISOString()
   });
 
@@ -650,12 +675,14 @@ export default function AdminPanel({ onBackToSite }) {
     const nextTypes = backup.types || [];
     const nextContent = { ...defaultSiteContent, ...(backup.siteContent || {}) };
 
-    localStorage.setItem(LOCAL_PROPERTIES_KEY, JSON.stringify(nextProperties));
-    localStorage.setItem(LOCAL_LOCATIONS_KEY, JSON.stringify(nextLocations));
-    localStorage.setItem(LOCAL_TYPES_KEY, JSON.stringify(nextTypes));
-    localStorage.setItem(LOCAL_CONTENT_KEY, JSON.stringify(nextContent));
+    if (!usesVercelStorage) {
+      localStorage.setItem(LOCAL_PROPERTIES_KEY, JSON.stringify(nextProperties));
+      localStorage.setItem(LOCAL_LOCATIONS_KEY, JSON.stringify(nextLocations));
+      localStorage.setItem(LOCAL_TYPES_KEY, JSON.stringify(nextTypes));
+      localStorage.setItem(LOCAL_CONTENT_KEY, JSON.stringify(nextContent));
+    }
 
-    if (backup.adminAuth) {
+    if (backup.adminAuth && !usesVercelStorage) {
       localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(backup.adminAuth));
     }
 
@@ -664,13 +691,17 @@ export default function AdminPanel({ onBackToSite }) {
     setTypes(nextTypes);
     setContentForm(nextContent);
 
-    if (hasSupabaseConfig) {
-      await saveProperties(nextProperties);
-      await saveLocations(nextLocations);
-      await saveTypes(nextTypes);
-      await saveSiteContent(nextContent);
+    if (hasSupabaseConfig || usesVercelStorage) {
+      const results = [
+        await saveProperties(nextProperties),
+        await saveLocations(nextLocations),
+        await saveTypes(nextTypes),
+        await saveSiteContent(nextContent)
+      ];
+      if (results.some((result) => !result)) throw new Error('No se pudo guardar el backup completo.');
+      setStorageReady(true);
 
-      if (backup.adminAuth) {
+      if (backup.adminAuth && !usesVercelStorage) {
         const { error } = await supabase
           .from('app_settings')
           .upsert({ key: ADMIN_AUTH_KEY, value: backup.adminAuth, updated_at: new Date().toISOString() });
@@ -690,11 +721,11 @@ export default function AdminPanel({ onBackToSite }) {
     try {
       const backup = JSON.parse(await file.text());
       await applyBackup(backup);
-      setMigrationMessage(hasSupabaseConfig
-        ? 'Backup importado y subido a Supabase correctamente.'
+      setMigrationMessage(usesVercelStorage || hasSupabaseConfig
+        ? 'Backup importado y guardado online correctamente.'
         : 'Backup importado en este navegador. Configurá Supabase para subirlo a la nube.'
       );
-      showToast(hasSupabaseConfig ? 'Backup importado y guardado correctamente.' : 'Backup importado localmente.');
+      showToast(usesVercelStorage || hasSupabaseConfig ? 'Backup importado y guardado correctamente.' : 'Backup importado localmente.');
     } catch (error) {
       console.error('Error importing backup', error);
       setMigrationError('No se pudo importar el backup. Verificá que sea un archivo JSON válido exportado desde este sistema.');
@@ -708,6 +739,17 @@ export default function AdminPanel({ onBackToSite }) {
     setMigrationMessage('');
     setMigrationError('');
 
+    if (usesVercelStorage) {
+      if (!window.confirm('¿Copiar los datos actuales de Supabase a Vercel Blob? Supabase no se modifica.')) return;
+      try {
+        await storageRequest({ action: 'migrate' });
+        showToast('Datos copiados a Vercel. Recargá el panel para verificarlos.');
+        setMigrationMessage('Migración completada. Recargá el panel para verificar propiedades y contenido.');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+      return;
+    }
     if (!hasSupabaseConfig) {
       setMigrationError('Supabase todavía no está configurado en Vercel/local. Cargá VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY y redeployá.');
       showToast('Supabase todavía no está configurado.', 'error');
@@ -1096,8 +1138,8 @@ export default function AdminPanel({ onBackToSite }) {
         </div>
         
         <div className={styles.navRight}>
-          <span className={`${styles.storageStatus} ${hasSupabaseConfig ? styles.storageOnline : styles.storageLocal}`}>
-            {hasSupabaseConfig ? 'Guardado online activo' : 'Guardado local'}
+          <span className={`${styles.storageStatus} ${usesVercelStorage || hasSupabaseConfig ? styles.storageOnline : styles.storageLocal}`}>
+            {usesVercelStorage ? 'Almacenamiento Vercel' : hasSupabaseConfig ? 'Guardado online activo' : 'Guardado local'}
           </span>
           <button onClick={onBackToSite} className={`btn btn-outline ${styles.viewSiteBtn}`}>
             <ExternalLink size={16} />
@@ -1184,23 +1226,25 @@ export default function AdminPanel({ onBackToSite }) {
           </button>
         </div>
 
+        {!storageReady && <p role="alert">No se pudieron cargar los datos. Completá la migración o recargá el panel antes de editar.</p>}
+
         {activeTab === 'migration' && (
         <section className={styles.tableSection}>
           <div className={styles.tableHeaderArea}>
             <div>
               <h2 className={styles.tableAreaTitle}>Migración de Datos</h2>
-              <p className={styles.sectionHint}>Usá esta pestaña desde el navegador donde cargaste los datos locales.</p>
+              <p className={styles.sectionHint}>{usesVercelStorage ? 'Copiá los datos de Supabase a Vercel sin modificar el origen.' : 'Usá esta pestaña desde el navegador donde cargaste los datos locales.'}</p>
             </div>
           </div>
 
           <div className={styles.contentSectionGroup}>
             <h3 className={styles.contentGroupTitle}>Subir datos locales a la nube</h3>
             <p className={styles.sectionHint}>
-              Este proceso lee propiedades, fotos, barrios, tipologías, textos, logo y contraseña guardados en este navegador y los sube a Supabase.
+              {usesVercelStorage ? 'La migración copia propiedades, fotos, barrios, tipologías, textos, logo y fondo desde Supabase a Vercel. El acceso al panel se configura con ADMIN_PASSWORD en Vercel.' : 'Este proceso lee propiedades, fotos, barrios, tipologías, textos, logo y contraseña guardados en este navegador y los sube a Supabase.'}
             </p>
             <div className={styles.migrationActions}>
               <button type="button" onClick={handleExportLocalData} className="btn btn-outline" style={{ padding: '10px 20px' }}>
-                Exportar Backup Local
+                {usesVercelStorage ? 'Exportar Backup' : 'Exportar Backup Local'}
               </button>
               <label className={`btn btn-outline ${styles.importBackupBtn}`}>
                 Importar Backup JSON
@@ -1212,10 +1256,10 @@ export default function AdminPanel({ onBackToSite }) {
                 />
               </label>
               <button type="button" onClick={handleMigrateLocalData} className="btn btn-primary" style={{ padding: '10px 20px' }}>
-                Migrar a Supabase
+                {usesVercelStorage ? 'Migrar Supabase a Vercel' : 'Migrar a Supabase'}
               </button>
             </div>
-            {!hasSupabaseConfig && (
+            {!hasSupabaseConfig && !usesVercelStorage && (
               <span className={styles.formErrorText}>Supabase no está configurado todavía. Cargá las variables en Vercel y hacé redeploy.</span>
             )}
             {migrationError && <span className={styles.formErrorText}>{migrationError}</span>}
@@ -1292,7 +1336,7 @@ export default function AdminPanel({ onBackToSite }) {
         </section>
         )}
 
-        {activeTab === 'content' && (
+        {activeTab === 'content' && storageReady && (
         <section className={styles.tableSection}>
           <div className={styles.tableHeaderArea}>
             <div>
@@ -1419,7 +1463,7 @@ export default function AdminPanel({ onBackToSite }) {
         </section>
         )}
 
-        {activeTab === 'lists' && (
+        {activeTab === 'lists' && storageReady && (
         <>
         <section className={styles.tableSection}>
           <div className={styles.tableHeaderArea}>
@@ -1522,7 +1566,7 @@ export default function AdminPanel({ onBackToSite }) {
         )}
 
         {/* Catalog Manager Table */}
-        {activeTab === 'properties' && (
+        {activeTab === 'properties' && storageReady && (
         <section className={styles.tableSection}>
           <div className={styles.tableHeaderArea}>
             <h2 className={styles.tableAreaTitle}>Administración de Catálogo</h2>

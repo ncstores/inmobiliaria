@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, supabase } from './supabaseClient';
+import { usesVercelStorage, readVercelData, saveVercelData } from './vercelStorage';
 
 export const propertiesData = [
   {
@@ -158,6 +159,7 @@ function saveLocalData(key, value) {
 }
 
 async function getSettingsValue(key, fallback) {
+  if (usesVercelStorage) return readVercelData(key);
   if (!hasSupabaseConfig) return getLocalData(key, fallback);
 
   const { data, error } = await supabase
@@ -168,18 +170,18 @@ async function getSettingsValue(key, fallback) {
 
   if (error) {
     console.error(`Error reading ${key} from Supabase`, error);
-    return getLocalData(key, fallback);
+    throw new Error('No se pudieron cargar los datos de Supabase.');
   }
 
   if (!data) {
-    await saveSettingsValue(key, fallback);
-    return fallback;
+    throw new Error(`No se encontraron los datos guardados: ${key}`);
   }
 
   return data.value;
 }
 
 async function saveSettingsValue(key, value) {
+  if (usesVercelStorage) return saveVercelData(key, value);
   if (!hasSupabaseConfig) return saveLocalData(key, value);
 
   const { error } = await supabase
@@ -195,6 +197,7 @@ async function saveSettingsValue(key, value) {
 }
 
 export async function getStoredProperties() {
+  if (usesVercelStorage) return readVercelData(STORAGE_KEY);
   if (!hasSupabaseConfig) return getLocalData(STORAGE_KEY, propertiesData);
 
   const { data, error } = await supabase
@@ -204,12 +207,11 @@ export async function getStoredProperties() {
 
   if (error) {
     console.error("Error reading properties from Supabase", error);
-    return getLocalData(STORAGE_KEY, propertiesData);
+    throw new Error('No se pudieron cargar las propiedades de Supabase.');
   }
 
   if (!data || data.length === 0) {
-    await saveProperties(propertiesData);
-    return propertiesData;
+    return [];
   }
 
   return data.map((property) => ({
@@ -232,6 +234,7 @@ export async function getStoredProperties() {
 }
 
 export async function saveProperties(properties) {
+  if (usesVercelStorage) return saveVercelData(STORAGE_KEY, properties);
   if (!hasSupabaseConfig) return saveLocalData(STORAGE_KEY, properties);
 
   const rows = properties.map((property, index) => ({

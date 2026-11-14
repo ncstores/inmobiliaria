@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, supabase } from './supabaseClient';
+import { usesVercelStorage, readVercelData, saveVercelData } from './vercelStorage';
 
 export const defaultSiteContent = {
   brandName: 'VERGNANO',
@@ -70,6 +71,7 @@ export const defaultSiteContent = {
 const STORAGE_KEY = 'vergnano_site_content';
 
 export async function getStoredSiteContent() {
+  if (usesVercelStorage) return { ...defaultSiteContent, ...await readVercelData(STORAGE_KEY) };
   if (hasSupabaseConfig) {
     const { data, error } = await supabase
       .from('app_settings')
@@ -78,12 +80,12 @@ export async function getStoredSiteContent() {
       .maybeSingle();
 
     if (error) {
-      console.error('Error reading site content from Supabase, using local fallback', error);
+      console.error('Error reading site content from Supabase', error);
+      throw new Error('No se pudo cargar el contenido de Supabase.');
     } else if (data) {
       return { ...defaultSiteContent, ...data.value };
     } else {
-      await saveSiteContent(defaultSiteContent);
-      return defaultSiteContent;
+      throw new Error('No se encontró el contenido guardado en Supabase.');
     }
   }
 
@@ -102,6 +104,7 @@ export async function getStoredSiteContent() {
 }
 
 export async function saveSiteContent(content) {
+  if (usesVercelStorage) return saveVercelData(STORAGE_KEY, content);
   if (hasSupabaseConfig) {
     const { error } = await supabase
       .from('app_settings')

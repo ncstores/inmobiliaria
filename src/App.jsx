@@ -17,6 +17,7 @@ export default function App() {
   const [types, setTypes] = useState([]);
   const [siteContent, setSiteContent] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [filters, setFilters] = useState({
     location: 'Todos',
@@ -49,20 +50,27 @@ export default function App() {
     let isMounted = true;
 
     async function loadData() {
-      const [storedProperties, storedLocations, storedTypes, storedContent] = await Promise.all([
-        getStoredProperties(),
-        getStoredLocations(),
-        getStoredTypes(),
-        getStoredSiteContent()
-      ]);
+      try {
+        const [storedProperties, storedLocations, storedTypes, storedContent] = await Promise.all([
+          getStoredProperties(),
+          getStoredLocations(),
+          getStoredTypes(),
+          getStoredSiteContent()
+        ]);
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      setAllProperties(storedProperties);
-      setLocations(storedLocations);
-      setTypes(storedTypes);
-      setSiteContent(storedContent);
-      setIsLoadingData(false);
+        setAllProperties(storedProperties);
+        setLocations(storedLocations);
+        setTypes(storedTypes);
+        setSiteContent(storedContent);
+        setIsLoadingData(false);
+        setLoadError('');
+      } catch (error) {
+        if (!isMounted) return;
+        setLoadError(error.message);
+        setIsLoadingData(false);
+      }
     }
 
     setIsLoadingData(true);
@@ -162,7 +170,9 @@ export default function App() {
 
   if (isLoadingData || !siteContent) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-light)' }} aria-label="Cargando sitio" />
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-light)', padding: '80px 24px', textAlign: 'center' }} aria-label="Cargando sitio">
+        {loadError && <><h2>No se pudo cargar el catálogo</h2><p>Intentá nuevamente en unos minutos.</p><button className="btn btn-primary" onClick={() => window.location.reload()}>Reintentar</button></>}
+      </div>
     );
   }
 

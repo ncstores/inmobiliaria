@@ -47,3 +47,21 @@ test('authenticated requests cannot save credentials or an invalid data shape', 
   const invalid = await request({ action: 'save', key: 'vergnano_properties', value: {} }, cookie);
   assert.equal(invalid.statusCode, 400);
 });
+
+test('migration reports missing source configuration to the authenticated administrator', async () => {
+  const names = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+  const previous = names.map((name) => process.env[name]);
+  try {
+    for (const name of names) delete process.env[name];
+    const login = await request({ action: 'login', password: 'test-password' });
+    const cookie = login.headers['Set-Cookie'].split(';')[0];
+    const result = await request({ action: 'migrate' }, cookie);
+    assert.equal(result.statusCode, 422);
+    assert.match(result.body.error, /Faltan las variables de Supabase/);
+  } finally {
+    names.forEach((name, index) => {
+      if (previous[index] === undefined) delete process.env[name];
+      else process.env[name] = previous[index];
+    });
+  }
+});

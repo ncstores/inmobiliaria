@@ -227,6 +227,7 @@ export default function AdminPanel({ onBackToSite }) {
   const [contentForm, setContentForm] = useState(defaultSiteContent);
   const [migrationMessage, setMigrationMessage] = useState('');
   const [migrationError, setMigrationError] = useState('');
+  const [isMigrating, setIsMigrating] = useState(false);
   const [toast, setToast] = useState(null);
   const [storageReady, setStorageReady] = useState(false);
   const toastTimeoutRef = useRef(null);
@@ -740,13 +741,18 @@ export default function AdminPanel({ onBackToSite }) {
     setMigrationError('');
 
     if (usesVercelStorage) {
+      if (isMigrating) return;
       if (!window.confirm('¿Copiar los datos actuales de Supabase a Vercel Blob? Supabase no se modifica.')) return;
+      setIsMigrating(true);
       try {
         await storageRequest({ action: 'migrate' });
         showToast('Datos copiados a Vercel. Recargá el panel para verificarlos.');
         setMigrationMessage('Migración completada. Recargá el panel para verificar propiedades y contenido.');
       } catch (error) {
+        setMigrationError(error.message);
         showToast(error.message, 'error');
+      } finally {
+        setIsMigrating(false);
       }
       return;
     }
@@ -1238,7 +1244,7 @@ export default function AdminPanel({ onBackToSite }) {
           </div>
 
           <div className={styles.contentSectionGroup}>
-            <h3 className={styles.contentGroupTitle}>Subir datos locales a la nube</h3>
+            <h3 className={styles.contentGroupTitle}>{usesVercelStorage ? 'Copiar el catálogo a Vercel' : 'Subir datos locales a la nube'}</h3>
             <p className={styles.sectionHint}>
               {usesVercelStorage ? 'La migración copia propiedades, fotos, barrios, tipologías, textos, logo y fondo desde Supabase a Vercel. El acceso al panel se configura con ADMIN_PASSWORD en Vercel.' : 'Este proceso lee propiedades, fotos, barrios, tipologías, textos, logo y contraseña guardados en este navegador y los sube a Supabase.'}
             </p>
@@ -1255,14 +1261,14 @@ export default function AdminPanel({ onBackToSite }) {
                   style={{ display: 'none' }}
                 />
               </label>
-              <button type="button" onClick={handleMigrateLocalData} className="btn btn-primary" style={{ padding: '10px 20px' }}>
-                {usesVercelStorage ? 'Migrar Supabase a Vercel' : 'Migrar a Supabase'}
+              <button type="button" onClick={handleMigrateLocalData} disabled={isMigrating} className="btn btn-primary" style={{ padding: '10px 20px' }}>
+                {isMigrating ? 'Copiando datos…' : usesVercelStorage ? 'Migrar Supabase a Vercel' : 'Migrar a Supabase'}
               </button>
             </div>
             {!hasSupabaseConfig && !usesVercelStorage && (
               <span className={styles.formErrorText}>Supabase no está configurado todavía. Cargá las variables en Vercel y hacé redeploy.</span>
             )}
-            {migrationError && <span className={styles.formErrorText}>{migrationError}</span>}
+            {migrationError && <p role="alert" className={styles.formErrorText}>{migrationError}</p>}
             {migrationMessage && <span className={styles.savedPill}>{migrationMessage}</span>}
           </div>
         </section>

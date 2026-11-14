@@ -4,6 +4,22 @@ import { createClient } from '@supabase/supabase-js';
 
 const keys = ['vergnano_properties', 'vergnano_locations', 'vergnano_types', 'vergnano_site_content'];
 const pathFor = (key) => `catalog/current/${key}.json`;
+class MigrationError extends Error {}
+
+function sourceError(error, dataset) {
+  console.error(`Supabase migration (${dataset}):`, error);
+  const code = String(error.code || 'sin código');
+  if (error.code === 'PGRST301' || error.code === 'PGRST303' || /invalid api key|invalid jwt/i.test(error.message || '')) {
+    return new MigrationError('Supabase rechazó la clave de acceso. Revisá las variables de Supabase en Production.');
+  }
+  if (error.code === '42P01' || error.code === 'PGRST205') {
+    return new MigrationError(`No se encontró la tabla ${dataset} en Supabase. Verificá que las variables apunten al proyecto correcto.`);
+  }
+  if (/fetch failed|network|resolve|timeout/i.test(error.message || '')) {
+    return new MigrationError('No se pudo conectar a Supabase. Revisá si el proyecto está pausado y si la URL de Production es correcta.');
+  }
+  return new MigrationError(`No se pudo leer ${dataset} de Supabase (${code.replace(/[^a-zA-Z0-9 _-]/g, '')}). Revisá el estado del proyecto y sus permisos de lectura.`);
+}
 const sign = (value) => createHmac('sha256', process.env.ADMIN_SESSION_SECRET).update(value).digest('hex');
 const equal = (a, b) => {
   const left = Buffer.from(String(a || ''));
@@ -86,17 +102,29 @@ export default async function handler(req, res) {
     if (body.action === 'migrate') {
       const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
       const key = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-      if (!url || !key) throw new Error('Faltan las variables de Supabase para recuperar los datos existentes.');
+      if (!url || !key) throw new MigrationError('Faltan las variables de Supabase en Production para recuperar los datos existentes.');
+      try { new URL(url); } catch { throw new MigrationError('La URL de Supabase en Production no es válida.'); }
       const legacy = createClient(url, key);
       const properties = await legacy.from('properties').select('*').order('sort_order');
       const settings = await legacy.from('app_settings').select('key,value').in('key', keys.slice(1));
-      if (properties.error || settings.error) throw new Error('No se pudo leer Supabase. No se modificó el catálogo.');
-      if (!properties.data.length || settings.data.length !== 3) throw new Error('Los datos de origen están incompletos. Revisá Supabase antes de migrar.');
+      if (properties.error) throw sourceError(properties.error, 'properties');
+      if (settings.error) throw sourceError(settings.error, 'app_settings');
+      if (!properties.data?.length) throw new MigrationError('Supabase no devolvió propiedades. Revisá la tabla properties y sus permisos: la migración no puede recuperar datos que ya no estén en el origen.');
+      const missingKeys = keys.slice(1).filter((item) => !settings.data?.some((setting) => setting.key === item));
+      if (missingKeys.length) throw new MigrationError(`Faltan estos datos en app_settings: ${missingKeys.join(', ')}. Revisá el proyecto de Supabase antes de migrar.`);
+      if (settings.data.some((setting) => setting.key === 'vergnano_site_content' ? !setting.value || typeof setting.value !== 'object' || Array.isArray(setting.value) : !Array.isArray(setting.value))) {
+        throw new MigrationError('Los datos de app_settings tienen un formato inesperado. No se copió el catálogo.');
+      }
       const rows = properties.data.map(({ map_url, sort_order: _sort, updated_at: _updated, ...item }) => ({ ...item, mapUrl: map_url || '' }));
       // A retry resumes missing datasets without replacing data already copied/edited.
-      if (await read(keys[0]) === null) await save(keys[0], rows);
-      for (const setting of settings.data) {
-        if (await read(setting.key) === null) await save(setting.key, setting.value);
+      try {
+        if (await read(keys[0]) === null) await save(keys[0], rows);
+        for (const setting of settings.data) {
+          if (await read(setting.key) === null) await save(setting.key, setting.value);
+        }
+      } catch (error) {
+        console.error('Migration Blob write:', error);
+        throw new MigrationError('Se leyeron los datos de Supabase, pero falló la copia a Blob. Revisá el token, permisos, límites y estado del almacenamiento en Vercel. Podés reintentar para completar los datos faltantes.');
       }
       return res.json({ value: true });
     }
@@ -109,6 +137,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Acción inválida.' });
   } catch (error) {
     console.error('Vercel storage:', error);
+    if (error instanceof MigrationError) return res.status(422).json({ error: error.message });
     return res.status(500).json({ error: 'No se pudo completar la operación. Revisá los registros de Vercel y la conexión de origen.' });
   }
 }
